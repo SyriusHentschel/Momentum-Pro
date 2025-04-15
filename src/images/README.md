@@ -1,0 +1,1 @@
+This directory will contain the images for the landing page.
