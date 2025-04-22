@@ -5,20 +5,13 @@ import { supabase } from "../supabase";
 export const useUserStore = defineStore("user", {
   state: () => ({
     user: null,
-    isDevelopmentMode: import.meta.env.DEV && 
-      (import.meta.env.VITE_SUPABASE_URL === undefined || 
-       import.meta.env.VITE_SUPABASE_URL.includes('placeholder'))
+    isDevelopmentMode: true // Force development mode to be true for now
   }),
   actions: {
     async fetchUser() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         this.user = user;
-        
-        // For development without Supabase, create a mock user
-        if (this.isDevelopmentMode && !this.user) {
-          console.log('Development mode: Using mock user');
-        }
       } catch (error) {
         console.error('Error fetching user:', error);
         this.user = null;
@@ -26,14 +19,15 @@ export const useUserStore = defineStore("user", {
     },
     async signUp(email, password) {
       try {
+        // Use the mock or real Supabase client
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
         
-        // In development mode, set the user immediately for testing
-        if (this.isDevelopmentMode) {
+        // If we got a user back directly (in mock mode), set it
+        if (data && data.user) {
           this.user = data.user;
         }
         
@@ -45,11 +39,14 @@ export const useUserStore = defineStore("user", {
     },
     async signIn(email, password) {
       try {
+        // Use the mock or real Supabase client
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+        
+        // Set the user
         this.user = data.user;
         return data;
       } catch (error) {
@@ -59,6 +56,7 @@ export const useUserStore = defineStore("user", {
     },
     async signInWithGitHub() {
       try {
+        // Use the standard GitHub OAuth flow without custom parameters
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: {
@@ -67,6 +65,12 @@ export const useUserStore = defineStore("user", {
         });
         
         if (error) throw error;
+        
+        // If we got a user back directly (in mock mode), set it
+        if (data && data.user) {
+          this.user = data.user;
+        }
+        
         return data;
       } catch (error) {
         console.error('Error signing in with GitHub:', error);
