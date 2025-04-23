@@ -12,6 +12,21 @@
     </header>
     
     <div class="dashboard-content">
+      <div class="priority-summary" v-if="taskStore.totalCount > 0">
+        <div class="priority-card priority-high">
+          <h3>High Priority</h3>
+          <p class="count">{{ taskStore.highPriorityTasks.length }}</p>
+        </div>
+        <div class="priority-card priority-medium">
+          <h3>Medium Priority</h3>
+          <p class="count">{{ taskStore.mediumPriorityTasks.length }}</p>
+        </div>
+        <div class="priority-card priority-low">
+          <h3>Low Priority</h3>
+          <p class="count">{{ taskStore.lowPriorityTasks.length }}</p>
+        </div>
+      </div>
+      
       <TaskForm />
       <TaskList />
     </div>
@@ -19,7 +34,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/user';
 import { useTaskStore } from '../store/task';
@@ -117,6 +132,55 @@ const handleLogout = async () => {
   border-radius: 8px;
   padding: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.priority-summary {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.priority-card {
+  flex: 1;
+  min-width: 150px;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.priority-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.priority-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.priority-card .count {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.priority-card.priority-high {
+  background-color: #fff8f8;
+  border-left: 4px solid #c62828;
+}
+
+.priority-card.priority-medium {
+  background-color: #f8fff8;
+  border-left: 4px solid #2e7d32;
+}
+
+.priority-card.priority-low {
+  background-color: #f8f8ff;
+  border-left: 4px solid #1565c0;
 }
 
 @media (max-width: 768px) {

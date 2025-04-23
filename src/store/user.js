@@ -5,7 +5,7 @@ import { supabase } from "../supabase";
 export const useUserStore = defineStore("user", {
   state: () => ({
     user: null,
-    isDevelopmentMode: true // Force development mode to be true for now
+    isDevelopmentMode: false // Use real Supabase client
   }),
   actions: {
     async fetchUser() {

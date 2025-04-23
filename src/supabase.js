@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-supabase-url.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
-// Force development mode for now due to API key issues
-const isMockClient = true; // Force mock client
+// Only use mock client if Supabase credentials are missing
+const isMockClient = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Create the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

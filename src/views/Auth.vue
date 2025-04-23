@@ -51,6 +51,16 @@
           </svg>
           Continue with GitHub
         </button>
+        
+        <!-- Development mode button -->
+        <div v-if="userStore.isDevelopmentMode" class="dev-mode-section">
+          <div class="divider">
+            <span>DEVELOPMENT MODE</span>
+          </div>
+          <button @click="useMockUser" class="dev-btn">
+            Use Mock User (Development Only)
+          </button>
+        </div>
       </div>
       
       <div class="toggle-form">
@@ -91,20 +101,31 @@ const handleSubmit = async () => {
   try {
     if (isLogin.value) {
       await userStore.signIn(email.value, password.value);
+      
+      // If we're in development mode or login was successful, redirect to home
+      if (userStore.user) {
+        router.push('/');
+        return;
+      }
     } else {
       await userStore.signUp(email.value, password.value);
+      
+      // In development mode, we can log in immediately
+      if (userStore.isDevelopmentMode && userStore.user) {
+        router.push('/');
+        return;
+      }
+      
+      // In production, show confirmation message
       errorMsg.value = 'Registration successful! Please check your email for confirmation.';
       loading.value = false;
       return;
     }
-    
-    // If we get here, login was successful
-    router.push('/');
   } catch (error) {
-    if (error.message.includes('Email not confirmed')) {
+    if (error.message && error.message.includes('Email not confirmed')) {
       errorMsg.value = 'Email not confirmed. Please check your inbox for the confirmation link.';
     } else {
-      errorMsg.value = error.message;
+      errorMsg.value = error.message || 'An error occurred';
     }
   } finally {
     loading.value = false;
@@ -116,11 +137,25 @@ const signInWithGitHub = async () => {
   loading.value = true;
   
   try {
-    await userStore.signInWithGitHub();
-    // The page will redirect to GitHub for authentication
+    const result = await userStore.signInWithGitHub();
+    
+    // In development mode with mock auth, we'll be logged in immediately
+    if (result && result.user) {
+      userStore.user = result.user;
+      router.push('/');
+      return;
+    }
+    
+    // In production, this would redirect to GitHub
   } catch (error) {
-    errorMsg.value = error.message;
+    errorMsg.value = error.message || 'Error signing in with GitHub';
     loading.value = false;
+  }
+};
+
+const useMockUser = () => {
+  if (userStore.setMockUserForDev()) {
+    router.push('/');
   }
 };
 </script>
@@ -292,5 +327,34 @@ input:focus {
 .github-btn:disabled {
   background-color: #6e7681;
   cursor: not-allowed;
+}
+
+.dev-mode-section {
+  margin-top: 16px;
+}
+
+.dev-mode-section .divider span {
+  color: #ff5252;
+  font-weight: bold;
+}
+
+.dev-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  background-color: #ff5252;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dev-btn:hover {
+  background-color: #e04545;
 }
 </style>

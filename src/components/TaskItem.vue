@@ -12,7 +12,28 @@
       </label>
       
       <div class="task-details">
-        <p class="task-title">{{ task.title }}</p>
+        <div class="task-header">
+          <p class="task-title">{{ task.title }}</p>
+          
+          <!-- Priority display/edit -->
+          <div v-if="!isEditingPriority" 
+               class="priority-badge" 
+               :class="`priority-${task.priority || 'medium'}`"
+               @click="startEditingPriority">
+            {{ formatPriority(task.priority || 'medium') }}
+          </div>
+          
+          <select v-else
+                  class="priority-select"
+                  :value="task.priority || 'medium'"
+                  @change="updatePriority($event)"
+                  @blur="isEditingPriority = false"
+                  ref="prioritySelect">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
         <span class="task-date">{{ formatDate(task.inserted_at) }}</span>
       </div>
     </div>
@@ -29,7 +50,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { useTaskStore } from '../store/task';
 
 const props = defineProps({
@@ -41,6 +62,43 @@ const props = defineProps({
 
 const taskStore = useTaskStore();
 const isUpdating = ref(false);
+const isEditingPriority = ref(false);
+const prioritySelect = ref(null);
+
+// Start editing priority
+const startEditingPriority = async () => {
+  console.log('Starting to edit priority');
+  isEditingPriority.value = true;
+  
+  // Focus the select element after it's rendered
+  await nextTick();
+  if (prioritySelect.value) {
+    prioritySelect.value.focus();
+  }
+};
+
+// Update priority when select value changes
+const updatePriority = async (event) => {
+  const newPriority = event.target.value;
+  console.log('Updating priority to:', newPriority);
+  
+  if (props.task.priority === newPriority) {
+    isEditingPriority.value = false;
+    return;
+  }
+  
+  isUpdating.value = true;
+  try {
+    console.log('Updating task with ID:', props.task.id);
+    await taskStore.updateTask(props.task.id, { priority: newPriority });
+    console.log('Priority updated successfully');
+  } catch (error) {
+    console.error('Error updating task priority:', error);
+  } finally {
+    isUpdating.value = false;
+    isEditingPriority.value = false;
+  }
+};
 
 const toggleComplete = async () => {
   isUpdating.value = true;
@@ -74,6 +132,17 @@ const formatDate = (dateString) => {
     year: 'numeric'
   });
 };
+
+const formatPriority = (priority) => {
+  const priorityMap = {
+    'high': 'High',
+    'medium': 'Medium',
+    'low': 'Low'
+  };
+  return priorityMap[priority] || 'Medium';
+};
+
+// No need for click-outside handler with modal approach
 </script>
 
 <style scoped>
@@ -165,16 +234,75 @@ const formatDate = (dateString) => {
   flex: 1;
 }
 
+.task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .task-title {
   font-size: 16px;
   margin: 0;
   color: #333;
   transition: all 0.3s;
+  flex: 1;
 }
 
 .completed .task-title {
   text-decoration: line-through;
   color: #888;
+}
+
+.priority-badge {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-block;
+}
+
+.priority-badge:hover {
+  opacity: 0.8;
+}
+
+.priority-select {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  border: 1px solid #ddd;
+  background-color: white;
+  cursor: pointer;
+  outline: none;
+  min-width: 90px;
+}
+
+.priority-select option {
+  font-size: 14px;
+  padding: 5px;
+}
+
+.modal-close-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.priority-high {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.priority-medium {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.priority-low {
+  background-color: #e3f2fd;
+  color: #1565c0;
 }
 
 .task-date {
