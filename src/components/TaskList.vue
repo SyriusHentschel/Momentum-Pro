@@ -252,5 +252,218 @@ const clearCompleted = async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+.draggable-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: background-color var(--transition-fast);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs);
+}
+
+.draggable-item:hover {
+  background-color: var(--neutral-200);
+}
+
+.task-drag-handle {
+  cursor: grab;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  color: var(--neutral-500);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-drag-handle:hover {
+  background-color: var(--neutral-300);
+  color: var(--neutral-700);
+}
+
+.drag-dots {
+  font-size: 1.2rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.ghost-task {
+  opacity: 0.5;
+  background: var(--primary-light);
+  border: 1px dashed var(--primary);
+}
+
+.custom-order-info {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--info-light);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--info);
+}
+
+.drag-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--info-dark);
+  font-size: var(--font-size-sm);
+}
+
+.drag-icon {
+  font-size: var(--font-size-lg);
+}
+
+/* Task list animations */
+.task-list-enter-active,
+.task-list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.task-list-enter-from,
+.task-list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.task-list-move {
+  transition: transform 0.5s ease;
+}
+
+/* Fade animation */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Responsive styles */
+@media (min-width: 768px) {
+  .task-list-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .search-container {
+    order: 1;
+    flex: 1;
+    max-width: 400px;
+    margin: 0;
+  }
+  
+  .task-stats {
+    order: 0;
+  }
+  
+  .task-actions {
+    order: 2;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 767px) {
+  .task-list-header {
+    gap: var(--spacing-sm);
+  }
+  
+  .filter-sort-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .sort-select,
+  .filter-select {
+    min-width: 120px;
+  }
+}
+
+/* Drag and drop styles */
+.draggable-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  position: relative;
+}
+
+.task-drag-handle {
+  cursor: grab;
+  padding: 0 var(--spacing-sm);
+  color: var(--neutral-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  transition: all var(--transition-fast);
+}
+
+.task-drag-handle:hover {
+  color: var(--primary);
+}
+
+.task-drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-dots {
+  font-size: 20px;
+  line-height: 1;
+  user-select: none;
+}
+
+.ghost-task {
+  opacity: 0.5;
+  background: var(--neutral-200);
+  border: 1px dashed var(--primary);
+}
+
+.custom-order-info {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--primary-light);
+  border-radius: var(--radius-md);
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.drag-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.drag-icon {
+  font-size: var(--font-size-md);
+  animation: bounce 2s infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1;  
+  .draggable-item {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .task-drag-handle {
+    padding: 0 var(--spacing-xs);
+  }
 }
 </style>

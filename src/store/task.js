@@ -7,7 +7,8 @@ export const useTaskStore = defineStore("tasks", {
   state: () => ({
     tasks: [],
     loading: false,
-    error: null
+    error: null,
+    customOrder: [] // Array of task IDs in custom order
   }),
   getters: {
     completedTasks: (state) => state.tasks.filter(task => task.is_complete),
@@ -28,6 +29,30 @@ export const useTaskStore = defineStore("tasks", {
         const priorityB = b.priority ? priorityOrder[b.priority] : 999;
         return priorityA - priorityB;
       });
+    },
+    
+    // Get tasks in custom order
+    getOrderedTasks: (state) => {
+      // If no custom order is set, return tasks in default order
+      if (!state.customOrder || state.customOrder.length === 0) {
+        return state.tasks;
+      }
+      
+      // Create a map of tasks by ID for quick lookup
+      const tasksById = {};
+      state.tasks.forEach(task => {
+        tasksById[task.id] = task;
+      });
+      
+      // Filter out any IDs in customOrder that don't exist in tasks
+      const validOrderIds = state.customOrder.filter(id => tasksById[id]);
+      
+      // Find any tasks that aren't in the custom order
+      const missingTasks = state.tasks.filter(task => !state.customOrder.includes(task.id));
+      
+      // Return tasks in custom order, with any missing tasks at the end
+      const orderedTasks = validOrderIds.map(id => tasksById[id]);
+      return [...orderedTasks, ...missingTasks];
     }
   },
   actions: {
@@ -63,6 +88,21 @@ export const useTaskStore = defineStore("tasks", {
               localStorage.setItem('mockTasks', JSON.stringify(mockTasks));
               this.tasks = mockTasks;
             }
+            
+            // Load custom order if available
+            const storedOrder = localStorage.getItem('momentum-task-order');
+            if (storedOrder) {
+              try {
+                this.customOrder = JSON.parse(storedOrder);
+              } catch (e) {
+                console.error('Error parsing stored task order:', e);
+                this.customOrder = [];
+              }
+            } else {
+              // Initialize custom order with current task IDs
+              this.customOrder = this.tasks.map(task => task.id);
+            }
+            
             return;
           } catch (e) {
             console.error('Error accessing localStorage:', e);
@@ -79,6 +119,25 @@ export const useTaskStore = defineStore("tasks", {
         if (error) throw error;
         
         this.tasks = data || [];
+        
+        // Initialize custom order if not already set
+        if (!this.customOrder.length) {
+          // Try to load from localStorage first
+          try {
+            const storedOrder = localStorage.getItem('momentum-task-order');
+            if (storedOrder) {
+              this.customOrder = JSON.parse(storedOrder);
+            } else {
+              // If no stored order, initialize with current task IDs
+              this.customOrder = this.tasks.map(task => task.id);
+              localStorage.setItem('momentum-task-order', JSON.stringify(this.customOrder));
+            }
+          } catch (e) {
+            console.error('Error initializing task order:', e);
+            // Fallback to default order
+            this.customOrder = this.tasks.map(task => task.id);
+          }
+        }
       } catch (error) {
         console.error("Error fetching tasks:", error);
         this.error = error.message;
@@ -139,6 +198,29 @@ export const useTaskStore = defineStore("tasks", {
         
         // Add the new task to the beginning of the array
         this.tasks = [data, ...this.tasks];
+        
+        // Update custom order to include the new task at the beginning
+        this.customOrder = [data.id, ...this.customOrder];
+        
+        // Save the updated order
+        try {
+          localStorage.setItem('momentum-task-order', JSON.stringify(this.customOrder));
+        } catch (e) {
+          console.error('Error saving task order to localStorage:', e);
+        }
+        
+        // If we're in development mode, also update the mock tasks order
+        if (userStore.isDevelopmentMode) {
+          try {
+            const storedOrder = localStorage.getItem('momentum-task-order');
+            if (!storedOrder) {
+              localStorage.setItem('momentum-task-order', JSON.stringify(this.customOrder));
+            }
+          } catch (e) {
+            console.error('Error updating mock task order:', e);
+          }
+        }
+        
         return data;
       } catch (error) {
         console.error("Error adding task:", error);
@@ -213,6 +295,16 @@ export const useTaskStore = defineStore("tasks", {
           // Remove from local state
           this.tasks = this.tasks.filter(task => task.id !== id);
           
+          // Remove from custom order
+          this.customOrder = this.customOrder.filter(taskId => taskId !== id);
+          
+          // Save the updated order
+          try {
+            localStorage.setItem('momentum-task-order', JSON.stringify(this.customOrder));
+          } catch (e) {
+            console.error('Error saving task order to localStorage:', e);
+          }
+          
           // Remove from localStorage
           try {
             const storedTasks = localStorage.getItem('mockTasks');
@@ -240,6 +332,41 @@ export const useTaskStore = defineStore("tasks", {
         this.tasks = this.tasks.filter(task => task.id !== id);
       } catch (error) {
         console.error("Error deleting task:", error);
+        throw error;
+      }
+    },
+    
+    // Update the custom order of tasks
+    async updateTaskOrder(newOrder) {
+      try {
+        if (!newOrder || !Array.isArray(newOrder)) {
+          throw new Error('Invalid task order provided');
+        }
+        
+        // Update the custom order in state
+        this.customOrder = newOrder;
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem('momentum-task-order', JSON.stringify(newOrder));
+        } catch (e) {
+          console.error('Error saving task order to localStorage:', e);
+          throw new Error('Failed to save task order: ' + e.message);
+        }
+        
+        const userStore = useUserStore();
+        
+        // If not in development mode, save to database
+        if (!userStore.isDevelopmentMode) {
+          // Here you would implement saving the order to your database
+          // For example, you might have a user_preferences table in Supabase
+          // This is a placeholder for future implementation
+          console.log('Task order updated in state and localStorage');
+        }
+        
+        return true;
+      } catch (error) {
+        console.error("Error updating task order:", error);
         throw error;
       }
     },
@@ -305,5 +432,44 @@ export const useTaskStore = defineStore("tasks", {
       }
     }
   },
-  persist: true,
+  
+  // Add a new action to update the task order
+  updateTaskOrder(newOrder) {
+    this.customOrder = newOrder;
+    
+    // Save to localStorage for persistence
+    try {
+      const userStore = useUserStore();
+      
+      if (userStore.isDevelopmentMode) {
+        localStorage.setItem('momentum-task-order', JSON.stringify(newOrder));
+      }
+    } catch (e) {
+      console.error('Error saving task order to localStorage:', e);
+    }
+  },
+  
+  // Get tasks in custom order if available
+  getOrderedTasks() {
+    // If we have a custom order and it contains all task IDs
+    if (this.customOrder.length > 0 && this.customOrder.length === this.tasks.length) {
+      // Create a map of tasks by ID for quick lookup
+      const tasksById = {};
+      this.tasks.forEach(task => {
+        tasksById[task.id] = task;
+      });
+      
+      // Return tasks in the custom order
+      return this.customOrder
+        .map(id => tasksById[id])
+        .filter(task => task !== undefined); // Filter out any missing tasks
+    }
+    
+    // If no custom order or it's incomplete, return tasks as is
+    return this.tasks;
+  }
+  },
+  persist: {
+    paths: ['tasks', 'customOrder']
+  },
 });
