@@ -151,6 +151,7 @@ const clearCompleted = async () => {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  animation: fadeIn 0.5s ease;
 }
 
 .stat-item {
@@ -226,6 +227,9 @@ const clearCompleted = async () => {
   background-color: #f9f9f9;
   border-radius: 8px;
   color: #666;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.8s ease;
+  border: 1px solid #eee;
 }
 
 .error-message {
@@ -251,7 +255,11 @@ const clearCompleted = async () => {
 .task-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  transition: all 0.3s ease;
+  
+  /* Enhanced animation for task list */
+  animation: fadeIn 0.5s ease;
 .draggable-item {
   display: flex;
   align-items: center;
