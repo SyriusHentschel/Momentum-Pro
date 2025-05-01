@@ -10,6 +10,7 @@ let devModeTasks = [
     description: "This is a sample task for development mode",
     user_id: "dev-user-123",
     is_complete: false,
+    importance: "medium",
     created_at: new Date().toISOString()
   },
   {
@@ -18,6 +19,7 @@ let devModeTasks = [
     description: "Another sample task for testing",
     user_id: "dev-user-123",
     is_complete: true,
+    importance: "low",
     created_at: new Date().toISOString()
   }
 ];
@@ -25,101 +27,188 @@ let devModeTasks = [
 export const useTaskStore = defineStore("tasks", {
   state: () => ({
     tasks: null,
+    isLoading: false,
+    error: null,
+    successMessage: null,
   }),
   actions: {
-    async fetchTasks() {
-      // Check if we're in development mode
-      if (localStorage.getItem('dev_mode_user')) {
-        console.log('Using development mode tasks');
-        this.tasks = [...devModeTasks];
-        return;
-      }
-      
-      // Otherwise use Supabase
-      const { data: tasks } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("id", { ascending: false });
-      this.tasks = tasks;
+    // Set loading state
+    setLoading(status) {
+      this.isLoading = status;
     },
     
-    async createTask(title, description, user_id) {
-      // Check if we're in development mode
-      if (localStorage.getItem('dev_mode_user')) {
-        console.log('Creating task in development mode');
-        const newTask = {
-          id: Date.now(), // Use timestamp as ID
-          title,
-          description,
-          user_id,
-          is_complete: false,
-          created_at: new Date().toISOString()
-        };
+    // Set error message
+    setError(message) {
+      this.error = message;
+      // Auto-clear error after 5 seconds
+      setTimeout(() => {
+        this.error = null;
+      }, 5000);
+    },
+    
+    // Set success message
+    setSuccess(message) {
+      this.successMessage = message;
+      // Auto-clear success message after 5 seconds
+      setTimeout(() => {
+        this.successMessage = null;
+      }, 5000);
+    },
+    
+    async fetchTasks() {
+      this.setLoading(true);
+      this.error = null;
+      
+      try {
+        // Check if we're in development mode
+        if (localStorage.getItem('dev_mode_user')) {
+          console.log('Using development mode tasks');
+          this.tasks = [...devModeTasks];
+          return;
+        }
         
-        devModeTasks.unshift(newTask);
-        await this.fetchTasks();
-        return [newTask];
+        // Otherwise use Supabase
+        const { data: tasks, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .order("id", { ascending: false });
+          
+        if (error) throw error;
+        this.tasks = tasks;
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        this.setError('Failed to load tasks. Please try again.');
+        this.tasks = [];
+      } finally {
+        this.setLoading(false);
       }
+    },
+    
+    async createTask(title, description, user_id, importance = 'medium') {
+      this.setLoading(true);
+      this.error = null;
       
-      // Otherwise use Supabase
-      const { data, error } = await supabase
-        .from("tasks")
-        .insert([
-          { 
-            title, 
-            description, 
-            user_id, 
-            is_complete: false 
-          }
-        ]);
-      
-      if (error) throw error;
-      await this.fetchTasks();
-      return data;
+      try {
+        // Check if we're in development mode
+        if (localStorage.getItem('dev_mode_user')) {
+          console.log('Creating task in development mode');
+          const newTask = {
+            id: Date.now(), // Use timestamp as ID
+            title,
+            description,
+            user_id,
+            is_complete: false,
+            importance,
+            created_at: new Date().toISOString()
+          };
+          
+          devModeTasks.unshift(newTask);
+          await this.fetchTasks();
+          this.setSuccess('Task created successfully!');
+          return [newTask];
+        }
+        
+        // Otherwise use Supabase
+        const { data, error } = await supabase
+          .from("tasks")
+          .insert([
+            { 
+              title, 
+              description, 
+              user_id, 
+              is_complete: false,
+              importance
+            }
+          ]);
+        
+        if (error) throw error;
+        await this.fetchTasks();
+        this.setSuccess('Task created successfully!');
+        return data;
+      } catch (error) {
+        console.error('Error creating task:', error);
+        this.setError('Failed to create task. Please try again.');
+        return null;
+      } finally {
+        this.setLoading(false);
+      }
     },
     
     async updateTask(id, updates) {
-      // Check if we're in development mode
-      if (localStorage.getItem('dev_mode_user')) {
-        console.log('Updating task in development mode', id, updates);
-        const index = devModeTasks.findIndex(task => task.id === id);
-        
-        if (index !== -1) {
-          devModeTasks[index] = { ...devModeTasks[index], ...updates };
-          await this.fetchTasks();
-          return [devModeTasks[index]];
+      this.setLoading(true);
+      this.error = null;
+      
+      try {
+        // Check if we're in development mode
+        if (localStorage.getItem('dev_mode_user')) {
+          console.log('Updating task in development mode', id, updates);
+          const index = devModeTasks.findIndex(task => task.id === id);
+          
+          if (index !== -1) {
+            devModeTasks[index] = { ...devModeTasks[index], ...updates };
+            await this.fetchTasks();
+            this.setSuccess('Task updated successfully!');
+            return [devModeTasks[index]];
+          }
+          return null;
         }
+        
+        // Otherwise use Supabase
+        const { data, error } = await supabase
+          .from("tasks")
+          .update(updates)
+          .match({ id });
+        
+        if (error) throw error;
+        await this.fetchTasks();
+        this.setSuccess('Task updated successfully!');
+        return data;
+      } catch (error) {
+        console.error('Error updating task:', error);
+        this.setError('Failed to update task. Please try again.');
         return null;
+      } finally {
+        this.setLoading(false);
       }
-      
-      // Otherwise use Supabase
-      const { data, error } = await supabase
-        .from("tasks")
-        .update(updates)
-        .match({ id });
-      
-      if (error) throw error;
-      await this.fetchTasks();
-      return data;
+    },
+    
+    async toggleTaskCompletion(id, currentStatus) {
+      return this.updateTask(id, { is_complete: !currentStatus });
+    },
+    
+    async updateTaskImportance(id, importance) {
+      return this.updateTask(id, { importance });
     },
     
     async deleteTask(id) {
-      // Check if we're in development mode
-      if (localStorage.getItem('dev_mode_user')) {
-        console.log('Deleting task in development mode', id);
-        devModeTasks = devModeTasks.filter(task => task.id !== id);
+      this.setLoading(true);
+      this.error = null;
+      
+      try {
+        // Check if we're in development mode
+        if (localStorage.getItem('dev_mode_user')) {
+          console.log('Deleting task in development mode', id);
+          devModeTasks = devModeTasks.filter(task => task.id !== id);
+          await this.fetchTasks();
+          this.setSuccess('Task deleted successfully!');
+          return;
+        }
+        
+        // Otherwise use Supabase
+        const { error } = await supabase
+          .from("tasks")
+          .delete()
+          .match({ id });
+        
+        if (error) throw error;
         await this.fetchTasks();
-        return;
+        this.setSuccess('Task deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        this.setError('Failed to delete task. Please try again.');
+      } finally {
+        this.setLoading(false);
       }
-      
-      // Otherwise use Supabase
-      const { error } = await supabase
-        .from("tasks")
-        .delete()
-        .match({ id });
-      
-      if (error) throw error;
-      await this.fetchTasks();
     }
   },
 });

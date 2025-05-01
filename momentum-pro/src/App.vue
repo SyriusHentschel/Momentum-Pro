@@ -47,4 +47,9 @@ body {
 .app-main {
   min-height: 100vh;
 }
+
+/* Ensure all form elements have visible text */
+input, textarea, select {
+  color: #333;
+}
 </style>

@@ -224,6 +224,7 @@ input {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  color: #333; /* Adding text color to make input text visible */
 }
 
 .submit-btn {
