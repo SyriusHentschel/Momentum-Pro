@@ -1,6 +1,7 @@
 // /store/task.js
 import { defineStore } from "pinia";
 import { supabase } from "../supabase";
+import { useToastStore } from "./toast";
 
 // For development mode
 let devModeTasks = [
@@ -37,19 +38,27 @@ export const useTaskStore = defineStore("tasks", {
       this.isLoading = status;
     },
     
-    // Set error message
+    // Set error message with toast
     setError(message) {
       this.error = message;
-      // Auto-clear error after 5 seconds
+      // Show toast notification
+      const toastStore = useToastStore();
+      toastStore.error(message);
+      
+      // Auto-clear error after 5 seconds (keeping for backward compatibility)
       setTimeout(() => {
         this.error = null;
       }, 5000);
     },
     
-    // Set success message
+    // Set success message with toast
     setSuccess(message) {
       this.successMessage = message;
-      // Auto-clear success message after 5 seconds
+      // Show toast notification
+      const toastStore = useToastStore();
+      toastStore.success(message);
+      
+      // Auto-clear success message after 5 seconds (keeping for backward compatibility)
       setTimeout(() => {
         this.successMessage = null;
       }, 5000);

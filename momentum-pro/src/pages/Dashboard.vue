@@ -8,16 +8,7 @@
     <main class="dashboard-content">
       <h2>Welcome, {{ userEmail }}</h2>
       
-      <!-- Notification area -->
-      <div v-if="taskStore.error" class="notification error">
-        <span>{{ taskStore.error }}</span>
-        <button @click="taskStore.error = null" class="close-btn">&times;</button>
-      </div>
-      
-      <div v-if="taskStore.successMessage" class="notification success">
-        <span>{{ taskStore.successMessage }}</span>
-        <button @click="taskStore.successMessage = null" class="close-btn">&times;</button>
-      </div>
+      <!-- Old notification area removed - now using toast notifications -->
       
       <div class="task-form">
         <h3>Add New Task</h3>

@@ -3,14 +3,6 @@
     <div class="auth-card">
       <h1 class="app-title">Momentum Pro</h1>
       
-      <div v-if="errorMsg" class="error-message">
-        {{ errorMsg }}
-      </div>
-      
-      <div v-if="successMsg" class="success-message">
-        {{ successMsg }}
-      </div>
-      
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
           <label for="email">Email</label>
@@ -73,22 +65,20 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/user';
+import { useToastStore } from '../store/toast';
 
 const router = useRouter();
 const userStore = useUserStore();
+const toastStore = useToastStore();
 
 const isLogin = ref(true);
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
-const errorMsg = ref('');
-const successMsg = ref('');
 const loading = ref(false);
 
 const toggleAuth = () => {
   isLogin.value = !isLogin.value;
-  errorMsg.value = '';
-  successMsg.value = '';
 };
 
 // Development only function to bypass authentication completely
@@ -115,6 +105,9 @@ const devLogin = () => {
     localStorage.setItem('dev_mode_user', JSON.stringify(mockUser));
     console.log('Saved to localStorage');
     
+    // Show toast notification
+    toastStore.info('Logged in with development mode');
+    
     // Force a small delay before redirecting
     setTimeout(() => {
       console.log('Redirecting to dashboard...');
@@ -122,19 +115,18 @@ const devLogin = () => {
     }, 100);
   } catch (error) {
     console.error('Error in dev login:', error);
+    toastStore.error('Development login failed');
   }
 };
 
 const handleSubmit = async () => {
-  errorMsg.value = '';
-  successMsg.value = '';
   loading.value = true;
   
   try {
     if (!isLogin.value) {
       // Sign up
       if (password.value !== confirmPassword.value) {
-        errorMsg.value = 'Passwords do not match';
+        toastStore.error('Passwords do not match');
         loading.value = false;
         return;
       }
@@ -148,7 +140,7 @@ const handleSubmit = async () => {
       // Check if email confirmation is required
       if (result.user && !result.session) {
         // Show success message with detailed instructions
-        successMsg.value = `Registration successful! Please check your email (${email.value}) to confirm your account. If you don't see the email, check your spam folder.`;
+        toastStore.success(`Registration successful! Please check your email (${email.value}) to confirm your account.`);
         
         // Clear form
         email.value = '';
@@ -158,6 +150,7 @@ const handleSubmit = async () => {
         // If we got a session, the user is already confirmed
         console.log('User is already confirmed, logging in directly');
         userStore.user = result.user;
+        toastStore.success('Logged in successfully!');
         router.push('/');
       }
       
@@ -169,7 +162,7 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     console.error('Auth error:', error);
-    errorMsg.value = error.message || 'An error occurred during authentication';
+    toastStore.error(error.message || 'An error occurred during authentication');
   } finally {
     loading.value = false;
   }
@@ -256,22 +249,6 @@ input {
 .toggle-auth a {
   color: #4a6cf7;
   text-decoration: none;
-}
-
-.error-message {
-  background-color: #ffebee;
-  color: #d32f2f;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-}
-
-.success-message {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
 }
 
 /* Development mode styles */
