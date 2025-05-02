@@ -2,40 +2,43 @@
   <div class="dashboard-container">
     <header class="dashboard-header">
       <h1>Momentum Pro</h1>
-      <button @click="handleSignOut" class="sign-out-btn">Sign Out</button>
+      <button @click="handleSignOut" class="sign-out-btn">
+        <span class="btn-text">Sign Out</span>
+      </button>
     </header>
     
     <main class="dashboard-content">
       <h2>Welcome, {{ userEmail }}</h2>
       
-      <!-- Notification area -->
-      <div v-if="taskStore.error" class="notification error">
-        <span>{{ taskStore.error }}</span>
-        <button @click="taskStore.error = null" class="close-btn">&times;</button>
-      </div>
-      
-      <div v-if="taskStore.successMessage" class="notification success">
-        <span>{{ taskStore.successMessage }}</span>
-        <button @click="taskStore.successMessage = null" class="close-btn">&times;</button>
-      </div>
+      <!-- Old notification area removed - now using toast notifications -->
       
       <div class="task-form">
         <h3>Add New Task</h3>
         <div class="form-group">
-          <input 
-            type="text" 
-            v-model="newTaskTitle" 
-            placeholder="Task title" 
-            class="task-input"
-          />
-          <textarea 
-            v-model="newTaskDescription" 
-            placeholder="Task description (optional)" 
-            class="task-textarea"
-          ></textarea>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              v-model="newTaskTitle" 
+              placeholder="Task title" 
+              class="task-input"
+            />
+            <span class="input-focus-effect"></span>
+          </div>
+          
+          <div class="input-wrapper">
+            <textarea 
+              v-model="newTaskDescription" 
+              placeholder="Task description (optional)" 
+              class="task-textarea"
+            ></textarea>
+            <span class="input-focus-effect"></span>
+          </div>
           
           <div class="form-row">
-            <label for="task-importance">Importance:</label>
+            <label for="task-importance">
+              <span class="label-icon">⚡</span>
+              Importance:
+            </label>
             <select id="task-importance" v-model="newTaskImportance" class="importance-select">
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -48,8 +51,10 @@
             class="add-task-btn" 
             :disabled="!newTaskTitle.trim() || taskStore.isLoading"
           >
-            <span v-if="taskStore.isLoading && isAddingTask">Adding...</span>
-            <span v-else>Add Task</span>
+            <span v-if="taskStore.isLoading && isAddingTask" class="loading-text">
+              <span class="dot-animation">Adding</span>
+            </span>
+            <span v-else class="btn-text">Add Task</span>
           </button>
         </div>
       </div>
@@ -78,20 +83,30 @@
           >
             <!-- Edit mode -->
             <div v-if="editingTaskId === task.id" class="edit-mode">
-              <input 
-                type="text" 
-                v-model="editTaskForm.title" 
-                class="edit-input"
-                placeholder="Task title"
-              />
-              <textarea 
-                v-model="editTaskForm.description" 
-                class="edit-textarea"
-                placeholder="Task description"
-              ></textarea>
+              <div class="input-wrapper">
+                <input 
+                  type="text" 
+                  v-model="editTaskForm.title" 
+                  class="edit-input"
+                  placeholder="Task title"
+                />
+                <span class="input-focus-effect"></span>
+              </div>
+              
+              <div class="input-wrapper">
+                <textarea 
+                  v-model="editTaskForm.description" 
+                  class="edit-textarea"
+                  placeholder="Task description"
+                ></textarea>
+                <span class="input-focus-effect"></span>
+              </div>
               
               <div class="form-row">
-                <label>Importance:</label>
+                <label>
+                  <span class="label-icon">⚡</span>
+                  Importance:
+                </label>
                 <select v-model="editTaskForm.importance" class="importance-select">
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -101,9 +116,11 @@
               
               <div class="edit-actions">
                 <button @click="saveTaskEdit(task.id)" class="save-btn" :disabled="!editTaskForm.title.trim()">
-                  Save
+                  <span class="btn-text">Save</span>
                 </button>
-                <button @click="cancelEdit" class="cancel-btn">Cancel</button>
+                <button @click="cancelEdit" class="cancel-btn">
+                  <span class="btn-text">Cancel</span>
+                </button>
               </div>
             </div>
             
@@ -128,9 +145,16 @@
                   </button>
                 </div>
               </div>
-              <p class="task-description">{{ task.description || 'No description' }}</p>
-              <div class="task-meta">
-                <span>Created: {{ formatDate(task.created_at) }}</span>
+              <div class="task-content">
+                <p class="task-description">{{ task.description || 'No description' }}</p>
+                <div class="task-meta">
+                  <span>Created: {{ formatDate(task.created_at) }}</span>
+                </div>
+              </div>
+              
+              <!-- Task completion indicator -->
+              <div v-if="task.is_complete" class="completion-indicator">
+                <span class="completion-icon">✓</span>
               </div>
             </div>
           </div>
@@ -325,83 +349,131 @@ const formatDate = (dateString) => {
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-light-gray);
+  position: relative;
+}
+
+.dashboard-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    var(--color-purple) 0%, 
+    var(--color-gold) 50%, 
+    var(--color-red) 100%);
+  box-shadow: 0 0 8px rgba(138, 43, 226, 0.5);
 }
 
 .dashboard-header h1 {
   margin: 0;
-  color: #333;
+  font-size: 2.5rem;
+  background: linear-gradient(90deg, var(--color-purple), var(--color-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
 }
 
 .sign-out-btn {
-  padding: 0.5rem 1rem;
-  background-color: #f44336;
+  padding: 0.6rem 1.2rem;
+  background-color: var(--color-red);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(255, 56, 96, 0.3);
 }
 
 .sign-out-btn:hover {
-  background-color: #d32f2f;
+  background-color: var(--color-red-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 56, 96, 0.4);
 }
 
 .dashboard-content {
-  background-color: white;
+  background-color: var(--color-bg-secondary);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-light-gray);
+  position: relative;
+  overflow: hidden;
 }
 
-h2, h3 {
+.dashboard-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--color-purple) 0%, 
+    var(--color-gold) 50%, 
+    var(--color-red) 100%);
+}
+
+h2 {
   margin-top: 0;
-  color: #333;
-}
-
-/* Notification styles */
-.notification {
+  color: var(--color-text-primary);
+  font-size: 1.8rem;
   margin-bottom: 1.5rem;
-  padding: 1rem;
-  border-radius: 4px;
+}
+
+h2::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 3px;
+  background: var(--color-accent-secondary);
+  margin-top: 8px;
+  border-radius: 2px;
+}
+
+h3 {
+  margin-top: 0;
+  color: var(--color-accent-secondary);
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  animation: fadeIn 0.3s ease-in-out;
 }
 
-.notification.error {
-  background-color: #ffebee;
-  border-left: 4px solid #f44336;
-  color: #d32f2f;
-}
-
-.notification.success {
-  background-color: #e8f5e9;
-  border-left: 4px solid #4caf50;
-  color: #388e3c;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: inherit;
-  opacity: 0.7;
-}
-
-.close-btn:hover {
-  opacity: 1;
+h3::before {
+  content: '●';
+  color: var(--color-accent-primary);
+  margin-right: 8px;
+  font-size: 0.8rem;
 }
 
 /* Task form styles */
 .task-form {
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background-color: #f9f9f9;
+  background-color: var(--color-bg-tertiary);
   border-radius: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-light-gray);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.task-form::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .form-group {
@@ -413,16 +485,30 @@ h2, h3 {
 .form-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.8rem;
+}
+
+.form-row label {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  min-width: 90px;
 }
 
 .task-input, .task-textarea, .importance-select, .edit-input, .edit-textarea {
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-light-gray);
   border-radius: 4px;
   font-size: 1rem;
-  background-color: white;
-  color: #333; /* Adding text color to make input text visible */
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  transition: all 0.3s;
+}
+
+.task-input:focus, .task-textarea:focus, .importance-select:focus, 
+.edit-input:focus, .edit-textarea:focus {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+  outline: none;
 }
 
 .task-textarea, .edit-textarea {
@@ -433,40 +519,51 @@ h2, h3 {
 .importance-select {
   padding: 0.5rem;
   min-width: 120px;
-  color: #333;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-light-gray);
+  cursor: pointer;
 }
 
 .add-task-btn, .save-btn, .cancel-btn, .confirm-btn {
-  padding: 0.75rem;
+  padding: 0.75rem 1.2rem;
   border: none;
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .add-task-btn, .save-btn, .confirm-btn {
-  background-color: #4a6cf7;
+  background-color: var(--color-accent-primary);
   color: white;
+  box-shadow: 0 2px 10px rgba(138, 43, 226, 0.3);
 }
 
 .add-task-btn:hover, .save-btn:hover, .confirm-btn:hover {
-  background-color: #3a5ce5;
+  background-color: var(--color-purple-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
 }
 
 .add-task-btn:disabled, .save-btn:disabled {
-  background-color: #a0a0a0;
+  background-color: var(--color-light-gray);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .cancel-btn {
-  background-color: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-light-gray);
 }
 
 .cancel-btn:hover {
-  background-color: #e0e0e0;
+  background-color: var(--color-light-gray);
+  transform: translateY(-2px);
 }
 
 /* Tasks container styles */
@@ -477,20 +574,21 @@ h2, h3 {
 .loading, .no-tasks {
   text-align: center;
   padding: 2rem;
-  color: #666;
-  background-color: #f9f9f9;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
   border-radius: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-light-gray);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
   margin: 0 auto 1rem;
-  border: 4px solid rgba(0, 0, 0, 0.1);
+  border: 4px solid rgba(138, 43, 226, 0.1);
   border-radius: 50%;
-  border-top-color: #4a6cf7;
+  border-top-color: var(--color-accent-primary);
   animation: spin 1s linear infinite;
+  box-shadow: 0 0 15px rgba(138, 43, 226, 0.2);
 }
 
 @keyframes spin {
@@ -498,8 +596,8 @@ h2, h3 {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-10px); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
 .task-list {
@@ -510,11 +608,25 @@ h2, h3 {
 
 .task-card {
   padding: 1.5rem;
-  background-color: #f9f9f9;
+  background-color: var(--color-bg-tertiary);
   border-radius: 8px;
-  border-left: 4px solid #4a6cf7; /* Default color */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border-left: 4px solid var(--color-accent-primary); /* Default color */
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.task-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .task-card.importance-low {
@@ -522,21 +634,21 @@ h2, h3 {
 }
 
 .task-card.importance-medium {
-  border-left-color: #ff9800;
+  border-left-color: var(--color-gold);
 }
 
 .task-card.importance-high {
-  border-left-color: #f44336;
+  border-left-color: var(--color-red);
 }
 
 .task-card.completed-task {
   opacity: 0.7;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-secondary);
 }
 
 .task-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
 }
 
 .task-header {
@@ -549,28 +661,31 @@ h2, h3 {
 .task-title-area {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.8rem;
   flex: 1;
 }
 
 .task-header h4 {
   margin: 0;
   font-size: 1.2rem;
-  color: #333;
+  color: var(--color-text-primary);
   word-break: break-word;
+  font-weight: 600;
 }
 
 .task-header h4.completed {
   text-decoration: line-through;
-  color: #888;
+  color: var(--color-text-muted);
 }
 
 .importance-badge {
   font-size: 0.7rem;
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 12px;
   color: white;
   font-weight: bold;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .importance-badge.importance-low {
@@ -578,11 +693,11 @@ h2, h3 {
 }
 
 .importance-badge.importance-medium {
-  background-color: #ff9800;
+  background-color: var(--color-gold);
 }
 
 .importance-badge.importance-high {
-  background-color: #f44336;
+  background-color: var(--color-red);
 }
 
 .task-actions {
@@ -592,25 +707,27 @@ h2, h3 {
 }
 
 .status-btn, .delete-btn, .edit-btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 4px;
+  border-radius: 50%;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .edit-btn {
-  background-color: #2196f3;
+  background-color: var(--color-purple);
   color: white;
 }
 
 .edit-btn:hover {
-  background-color: #1976d2;
-  transform: scale(1.05);
+  background-color: var(--color-purple-dark);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(138, 43, 226, 0.4);
 }
 
 .status-btn {
@@ -620,17 +737,19 @@ h2, h3 {
 
 .status-btn:hover {
   background-color: #388e3c;
-  transform: scale(1.05);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
 }
 
 .delete-btn {
-  background-color: #f44336;
+  background-color: var(--color-red);
   color: white;
 }
 
 .delete-btn:hover {
-  background-color: #d32f2f;
-  transform: scale(1.05);
+  background-color: var(--color-red-dark);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(255, 56, 96, 0.4);
 }
 
 .icon {
@@ -639,13 +758,23 @@ h2, h3 {
 
 .task-description {
   margin-bottom: 1rem;
-  color: #555;
+  color: var(--color-text-secondary);
   word-break: break-word;
+  line-height: 1.5;
+  font-size: 0.95rem;
 }
 
 .task-meta {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.task-meta span::before {
+  content: '⏱️';
+  margin-right: 5px;
+  font-size: 0.9rem;
 }
 
 /* Edit mode styles */
@@ -657,8 +786,8 @@ h2, h3 {
 
 .edit-actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 0.8rem;
+  margin-top: 1rem;
 }
 
 /* Modal styles */
@@ -668,7 +797,8 @@ h2, h3 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -677,17 +807,37 @@ h2, h3 {
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--color-bg-secondary);
   padding: 2rem;
   border-radius: 8px;
   max-width: 500px;
   width: 90%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(138, 43, 226, 0.3);
+  border: 1px solid var(--color-light-gray);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-red) 0%, var(--color-red-dark) 100%);
 }
 
 .modal-content h3 {
   margin-top: 0;
-  color: #333;
+  color: var(--color-red);
+  font-size: 1.5rem;
+}
+
+.modal-content p {
+  color: var(--color-text-primary);
+  margin: 1rem 0;
+  line-height: 1.6;
 }
 
 .modal-actions {
@@ -695,5 +845,116 @@ h2, h3 {
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1.5rem;
+}
+
+.confirm-btn {
+  background-color: var(--color-red);
+  box-shadow: 0 2px 10px rgba(255, 56, 96, 0.3);
+}
+
+.confirm-btn:hover {
+  background-color: var(--color-red-dark);
+  box-shadow: 0 4px 15px rgba(255, 56, 96, 0.4);
+}
+
+/* Enhanced input styling */
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-focus-effect {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-purple), var(--color-gold));
+  transition: width 0.3s ease;
+}
+
+.task-input:focus + .input-focus-effect,
+.task-textarea:focus + .input-focus-effect,
+.edit-input:focus + .input-focus-effect,
+.edit-textarea:focus + .input-focus-effect {
+  width: 100%;
+}
+
+/* Button text animation */
+.btn-text {
+  position: relative;
+  z-index: 1;
+}
+
+/* Loading animation */
+.loading-text {
+  display: inline-block;
+}
+
+.dot-animation::after {
+  content: '...';
+  display: inline-block;
+  width: 1em;
+  text-align: left;
+  animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+/* Label icon styling */
+.label-icon {
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 0.9rem;
+}
+
+/* Task content styling */
+.task-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Completion indicator */
+.completion-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgba(76, 175, 80, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+}
+
+.completion-icon {
+  color: #4caf50;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* Hover effects for buttons */
+.sign-out-btn:active,
+.add-task-btn:active,
+.save-btn:active,
+.confirm-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Subtle pulse animation for important tasks */
+.task-card.importance-high {
+  animation: subtle-pulse 3s infinite alternate;
+}
+
+@keyframes subtle-pulse {
+  0% { box-shadow: var(--shadow-md); }
+  100% { box-shadow: 0 5px 15px rgba(255, 56, 96, 0.3); }
 }
 </style>

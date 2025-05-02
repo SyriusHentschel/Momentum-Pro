@@ -1,88 +1,185 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  /* Futuristic Color Palette */
+  --color-black: #121212;
+  --color-dark-gray: #1e1e1e;
+  --color-gray: #2a2a2a;
+  --color-light-gray: #3a3a3a;
+  --color-silver: #c0c0c0;
+  --color-silver-highlight: #e0e0e0;
+  --color-gold: #ffd700;
+  --color-gold-dark: #d4af37;
+  --color-purple: #8a2be2;
+  --color-purple-dark: #6a1fb2;
+  --color-red: #ff3860;
+  --color-red-dark: #d32f2f;
+  
+  /* Accent colors */
+  --color-accent-primary: var(--color-purple);
+  --color-accent-secondary: var(--color-gold);
+  --color-accent-danger: var(--color-red);
+  
+  /* Text colors */
+  --color-text-primary: var(--color-silver-highlight);
+  --color-text-secondary: var(--color-silver);
+  --color-text-muted: #888888;
+  
+  /* Background colors */
+  --color-bg-primary: var(--color-black);
+  --color-bg-secondary: var(--color-dark-gray);
+  --color-bg-tertiary: var(--color-gray);
+  --color-bg-card: var(--color-light-gray);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-glow-purple: 0 0 10px rgba(138, 43, 226, 0.4);
+  --shadow-glow-gold: 0 0 10px rgba(255, 215, 0, 0.4);
+  
+  /* Typography */
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  
+  /* Base styling */
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure all form inputs have visible text */
+/* Form elements */
 input, textarea, select {
-  color: #333;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-light-gray);
+  border-radius: 4px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
 }
 
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+  outline: none;
+}
+
+/* Links */
 a {
   font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  color: var(--color-accent-primary);
+  text-decoration: none;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
+a:hover {
+  color: var(--color-accent-secondary);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+/* Body */
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(138, 43, 226, 0.05) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 20%);
 }
 
+/* Typography */
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
 }
 
+h2 {
+  font-size: 2rem;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+  margin-bottom: 0.75rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  color: var(--color-accent-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* Buttons */
 button {
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: 1rem;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.3s ease;
 }
+
 button:hover {
-  border-color: #646cff;
+  background-color: var(--color-light-gray);
+  box-shadow: var(--shadow-glow-purple);
 }
+
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
 }
 
+/* Card */
 .card {
-  padding: 2em;
+  padding: 1.5rem;
+  background-color: var(--color-bg-card);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* App container */
 #app {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 1rem;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-  /* Ensure inputs still have visible text in light mode */
-  input, textarea, select {
-    color: #333;
-  }
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-light-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-primary);
 }
