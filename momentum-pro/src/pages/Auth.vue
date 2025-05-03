@@ -198,24 +198,9 @@ const handleSubmit = async () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--color-bg-primary);
   position: relative;
   overflow: hidden;
-}
-
-.auth-container::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.05) 0%, transparent 20%),
-    radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 20%),
-    radial-gradient(circle at 50% 50%, rgba(255, 56, 96, 0.03) 0%, transparent 30%);
-  animation: slowRotate 60s linear infinite;
-  z-index: 0;
+  z-index: 10; /* Ensure it's above the background but doesn't create its own stacking context */
 }
 
 @keyframes slowRotate {
