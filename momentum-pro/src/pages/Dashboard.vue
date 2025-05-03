@@ -60,7 +60,30 @@
       </div>
       
       <div class="tasks-container">
-        <h3>Your Tasks</h3>
+        <div class="tasks-header">
+          <h3>Your Tasks</h3>
+          
+          <div class="task-controls">
+            <div class="filter-controls">
+              <label for="task-filter">Filter:</label>
+              <select id="task-filter" v-model="taskFilter" @change="savePreferences">
+                <option value="all">All Tasks</option>
+                <option value="complete">Completed</option>
+                <option value="incomplete">Incomplete</option>
+              </select>
+            </div>
+            
+            <div class="sort-controls">
+              <label for="task-sort">Sort By:</label>
+              <select id="task-sort" v-model="taskSort" @change="savePreferences">
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="importance">Importance</option>
+                <option value="alphabetical">Alphabetical</option>
+              </select>
+            </div>
+          </div>
+        </div>
         
         <div v-if="taskStore.isLoading && !isAddingTask" class="loading">
           <div class="spinner"></div>
@@ -71,9 +94,13 @@
           You don't have any tasks yet. Add your first task above!
         </div>
         
+        <div v-else-if="filteredSortedTasks.length === 0" class="no-tasks">
+          No tasks match your current filter. Try changing your filter settings.
+        </div>
+        
         <div v-else class="task-list">
           <div 
-            v-for="task in tasks" 
+            v-for="task in filteredSortedTasks" 
             :key="task.id" 
             class="task-card"
             :class="[
@@ -182,12 +209,18 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useUserStore } from '../store/user';
 import { useTaskStore } from '../store/task';
+import { usePreferencesStore } from '../store/preferences';
 
 const router = useRouter();
 const userStore = useUserStore();
 const taskStore = useTaskStore();
+const preferencesStore = usePreferencesStore();
 const { user } = storeToRefs(userStore);
 const { tasks, isLoading } = storeToRefs(taskStore);
+
+// Task filtering and sorting
+const taskFilter = ref(preferencesStore.taskFilter);
+const taskSort = ref(preferencesStore.taskSort);
 
 // Task form state
 const newTaskTitle = ref('');
@@ -210,6 +243,49 @@ const taskToDelete = ref(null);
 const userEmail = computed(() => {
   return user.value?.email || 'User';
 });
+
+// Computed property for filtered and sorted tasks
+const filteredSortedTasks = computed(() => {
+  if (!tasks.value) return [];
+  
+  // First, filter the tasks
+  let result = [...tasks.value];
+  
+  if (taskFilter.value === 'complete') {
+    result = result.filter(task => task.is_complete);
+  } else if (taskFilter.value === 'incomplete') {
+    result = result.filter(task => !task.is_complete);
+  }
+  
+  // Then, sort the tasks
+  switch (taskSort.value) {
+    case 'date-desc':
+      result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      break;
+    case 'date-asc':
+      result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      break;
+    case 'importance':
+      const importanceOrder = { high: 3, medium: 2, low: 1 };
+      result.sort((a, b) => {
+        const aImportance = importanceOrder[a.importance || 'medium'] || 2;
+        const bImportance = importanceOrder[b.importance || 'medium'] || 2;
+        return bImportance - aImportance;
+      });
+      break;
+    case 'alphabetical':
+      result.sort((a, b) => a.title.localeCompare(b.title));
+      break;
+  }
+  
+  return result;
+});
+
+// Save user preferences
+const savePreferences = () => {
+  preferencesStore.setTaskFilter(taskFilter.value);
+  preferencesStore.setTaskSort(taskSort.value);
+};
 
 onMounted(async () => {
   try {
@@ -343,6 +419,18 @@ const formatDate = (dateString) => {
   position: relative;
 }
 
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -376,6 +464,29 @@ const formatDate = (dateString) => {
   background-clip: text;
   text-fill-color: transparent;
   text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.8rem;
+  }
 }
 
 .sign-out-btn {
@@ -494,6 +605,23 @@ h3::before {
   min-width: 90px;
 }
 
+@media (max-width: 576px) {
+  .form-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .form-row label {
+    min-width: auto;
+    margin-bottom: 0.3rem;
+  }
+  
+  .importance-select {
+    width: 100%;
+  }
+}
+
 .task-input, .task-textarea, .importance-select, .edit-input, .edit-textarea {
   padding: 0.75rem;
   border: 1px solid var(--color-light-gray);
@@ -606,6 +734,20 @@ h3::before {
   gap: 1.5rem;
 }
 
+@media (max-width: 768px) {
+  .task-list {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .task-list {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
 .task-card {
   padding: 1.5rem;
   background-color: var(--color-bg-tertiary);
@@ -663,6 +805,22 @@ h3::before {
   align-items: center;
   gap: 0.8rem;
   flex: 1;
+}
+
+@media (max-width: 576px) {
+  .task-header {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .task-title-area {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .task-actions {
+    align-self: flex-end;
+  }
 }
 
 .task-header h4 {
@@ -818,6 +976,22 @@ h3::before {
   overflow: hidden;
 }
 
+@media (max-width: 576px) {
+  .modal-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
 .modal-content::before {
   content: '';
   position: absolute;
@@ -956,5 +1130,100 @@ h3::before {
 @keyframes subtle-pulse {
   0% { box-shadow: var(--shadow-md); }
   100% { box-shadow: 0 5px 15px rgba(255, 56, 96, 0.3); }
+}
+
+/* Task filtering and sorting styles */
+.tasks-container {
+  margin-top: 2rem;
+}
+
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tasks-header h3 {
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.task-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-controls,
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-controls label,
+.sort-controls label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.filter-controls select,
+.sort-controls select {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-light-gray);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-controls select:hover,
+.sort-controls select:hover {
+  border-color: var(--color-purple);
+}
+
+.filter-controls select:focus,
+.sort-controls select:focus {
+  outline: none;
+  border-color: var(--color-purple);
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+}
+
+@media (max-width: 768px) {
+  .tasks-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .task-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 576px) {
+  .task-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .filter-controls,
+  .sort-controls {
+    width: 100%;
+  }
+  
+  .filter-controls select,
+  .sort-controls select {
+    flex-grow: 1;
+  }
 }
 </style>

@@ -222,6 +222,15 @@ const handleSubmit = async () => {
   animation: fadeIn 0.5s ease-out;
 }
 
+@media (max-width: 576px) {
+  .auth-card {
+    max-width: 100%;
+    padding: 1.5rem;
+    margin: 1rem;
+    border-radius: 6px;
+  }
+}
+
 .auth-card::before {
   content: '';
   position: absolute;
@@ -262,6 +271,18 @@ const handleSubmit = async () => {
   position: relative;
 }
 
+@media (max-width: 768px) {
+  .app-title {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .app-title {
+    font-size: 1.8rem;
+  }
+}
+
 .app-title::after {
   content: '';
   display: block;
@@ -283,6 +304,12 @@ h2 {
 .form-group {
   margin-bottom: 1.5rem;
   position: relative;
+}
+
+@media (max-width: 576px) {
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
 }
 
 label {
@@ -328,6 +355,13 @@ input:focus {
   box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3);
   position: relative;
   overflow: hidden;
+}
+
+@media (max-width: 576px) {
+  .submit-btn {
+    padding: 0.75rem;
+    font-size: 0.95rem;
+  }
 }
 
 .submit-btn::before {
@@ -418,6 +452,18 @@ input:focus {
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+}
+
+@media (max-width: 576px) {
+  .dev-login-btn {
+    padding: 0.65rem;
+    font-size: 0.85rem;
+  }
+  
+  .dev-login {
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+  }
 }
 
 .dev-login-btn:hover {
