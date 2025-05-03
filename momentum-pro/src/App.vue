@@ -82,6 +82,18 @@ body {
   z-index: 10; /* Ensure content is above background */
 }
 
+@media (max-width: 768px) {
+  .app-content {
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .app-content {
+    padding: 0 0.25rem;
+  }
+}
+
 /* Background container */
 .app-background {
   position: absolute;

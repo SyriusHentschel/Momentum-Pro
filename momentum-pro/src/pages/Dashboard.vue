@@ -343,6 +343,18 @@ const formatDate = (dateString) => {
   position: relative;
 }
 
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -376,6 +388,29 @@ const formatDate = (dateString) => {
   background-clip: text;
   text-fill-color: transparent;
   text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.8rem;
+  }
 }
 
 .sign-out-btn {
@@ -494,6 +529,23 @@ h3::before {
   min-width: 90px;
 }
 
+@media (max-width: 576px) {
+  .form-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .form-row label {
+    min-width: auto;
+    margin-bottom: 0.3rem;
+  }
+  
+  .importance-select {
+    width: 100%;
+  }
+}
+
 .task-input, .task-textarea, .importance-select, .edit-input, .edit-textarea {
   padding: 0.75rem;
   border: 1px solid var(--color-light-gray);
@@ -606,6 +658,20 @@ h3::before {
   gap: 1.5rem;
 }
 
+@media (max-width: 768px) {
+  .task-list {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .task-list {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
 .task-card {
   padding: 1.5rem;
   background-color: var(--color-bg-tertiary);
@@ -663,6 +729,22 @@ h3::before {
   align-items: center;
   gap: 0.8rem;
   flex: 1;
+}
+
+@media (max-width: 576px) {
+  .task-header {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .task-title-area {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .task-actions {
+    align-self: flex-end;
+  }
 }
 
 .task-header h4 {
@@ -816,6 +898,22 @@ h3::before {
   border: 1px solid var(--color-light-gray);
   position: relative;
   overflow: hidden;
+}
+
+@media (max-width: 576px) {
+  .modal-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .modal-actions button {
+    width: 100%;
+  }
 }
 
 .modal-content::before {
