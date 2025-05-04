@@ -21,7 +21,11 @@
               v-model="newTaskTitle" 
               placeholder="Task title" 
               class="task-input"
+              maxlength="50"
             />
+            <div class="char-counter" :class="{ 'near-limit': newTaskTitle.length > 40 }">
+              {{ newTaskTitle.length }}/50
+            </div>
             <span class="input-focus-effect"></span>
           </div>
           
@@ -30,7 +34,11 @@
               v-model="newTaskDescription" 
               placeholder="Task description (optional)" 
               class="task-textarea"
+              maxlength="200"
             ></textarea>
+            <div class="char-counter" :class="{ 'near-limit': newTaskDescription.length > 160 }">
+              {{ newTaskDescription.length }}/200
+            </div>
             <span class="input-focus-effect"></span>
           </div>
           
@@ -99,15 +107,20 @@
         </div>
         
         <div v-else class="task-list">
-          <div 
-            v-for="task in filteredSortedTasks" 
-            :key="task.id" 
-            class="task-card"
-            :class="[
-              { 'completed-task': task.is_complete },
-              `importance-${task.importance || 'medium'}`
-            ]"
+          <transition-group 
+            name="task-transition" 
+            tag="div" 
+            class="task-list-inner"
           >
+            <div 
+              v-for="task in filteredSortedTasks" 
+              :key="task.id" 
+              class="task-card"
+              :class="[
+                { 'completed-task': task.is_complete },
+                `importance-${task.importance || 'medium'}`
+              ]"
+            >
             <!-- Edit mode -->
             <div v-if="editingTaskId === task.id" class="edit-mode">
               <div class="input-wrapper">
@@ -116,7 +129,11 @@
                   v-model="editTaskForm.title" 
                   class="edit-input"
                   placeholder="Task title"
+                  maxlength="50"
                 />
+                <div class="char-counter" :class="{ 'near-limit': editTaskForm.title.length > 40 }">
+                  {{ editTaskForm.title.length }}/50
+                </div>
                 <span class="input-focus-effect"></span>
               </div>
               
@@ -125,7 +142,11 @@
                   v-model="editTaskForm.description" 
                   class="edit-textarea"
                   placeholder="Task description"
+                  maxlength="200"
                 ></textarea>
+                <div class="char-counter" :class="{ 'near-limit': editTaskForm.description.length > 160 }">
+                  {{ editTaskForm.description.length }}/200
+                </div>
                 <span class="input-focus-effect"></span>
               </div>
               
@@ -173,7 +194,18 @@
                 </div>
               </div>
               <div class="task-content">
-                <p class="task-description">{{ task.description || 'No description' }}</p>
+                <div class="description-container">
+                  <p class="task-description" :class="{ 'expanded': expandedDescriptions[task.id] }">
+                    {{ task.description || 'No description' }}
+                  </p>
+                  <button 
+                    v-if="task.description && task.description.length > 100" 
+                    @click="toggleDescription(task.id)" 
+                    class="read-more-btn"
+                  >
+                    {{ expandedDescriptions[task.id] ? 'Show Less' : 'Read More' }}
+                  </button>
+                </div>
                 <div class="task-meta">
                   <span>Created: {{ formatDate(task.created_at) }}</span>
                 </div>
@@ -185,6 +217,7 @@
               </div>
             </div>
           </div>
+          </transition-group>
         </div>
       </div>
     </main>
@@ -239,6 +272,9 @@ const editTaskForm = ref({
 // Delete confirmation state
 const showDeleteConfirm = ref(false);
 const taskToDelete = ref(null);
+
+// Description expansion state
+const expandedDescriptions = ref({});
 
 const userEmail = computed(() => {
   return user.value?.email || 'User';
@@ -439,6 +475,7 @@ const formatDate = (dateString) => {
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--color-light-gray);
   position: relative;
+  animation: fadeIn 0.8s ease-out;
 }
 
 .dashboard-header::after {
@@ -464,6 +501,43 @@ const formatDate = (dateString) => {
   background-clip: text;
   text-fill-color: transparent;
   text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+  position: relative;
+  animation: titleGlow 3s infinite alternate;
+  letter-spacing: 0.5px;
+}
+
+@keyframes titleGlow {
+  0% {
+    text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+  }
+  100% {
+    text-shadow: 0 0 20px rgba(138, 43, 226, 0.6), 0 0 30px rgba(255, 215, 0, 0.3);
+  }
+}
+
+.dashboard-content h2 {
+  animation: fadeIn 1s ease-out;
+  margin-bottom: 1.5rem;
+  position: relative;
+  display: inline-block;
+  transition: all 0.3s ease;
+  color: var(--color-text-primary);
+}
+
+.dashboard-content h2::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+  transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 2px;
+}
+
+.dashboard-content h2:hover::after {
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -494,28 +568,64 @@ const formatDate = (dateString) => {
   background-color: var(--color-red);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   font-weight: 500;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 10px rgba(255, 56, 96, 0.3);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.sign-out-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.6s;
+  z-index: -1;
+}
+
+.sign-out-btn:hover::before {
+  left: 100%;
 }
 
 .sign-out-btn:hover {
   background-color: var(--color-red-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 56, 96, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(255, 56, 96, 0.5);
+}
+
+.sign-out-btn .btn-text {
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.sign-out-btn:hover .btn-text {
+  transform: scale(1.05);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .dashboard-content {
   background-color: var(--color-bg-secondary);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-light-gray);
   position: relative;
   overflow: hidden;
+  animation: fadeIn 1s ease-out;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.dashboard-content:hover {
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(138, 43, 226, 0.1);
 }
 
 .dashboard-content::before {
@@ -567,13 +677,31 @@ h3::before {
 /* Task form styles */
 .task-form {
   margin-bottom: 2rem;
-  padding: 1.5rem;
+  padding: 1.8rem;
   background-color: var(--color-bg-tertiary);
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--color-light-gray);
   box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
+  animation: fadeIn 1s ease-out;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.task-form:hover {
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(138, 43, 226, 0.15);
+  transform: translateY(-3px);
+}
+
+.task-form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+  opacity: 0.8;
 }
 
 .task-form::after {
@@ -581,28 +709,74 @@ h3::before {
   position: absolute;
   top: 0;
   right: 0;
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
   background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
   pointer-events: none;
+  animation: pulse 3s infinite alternate;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem;
+  animation: fadeIn 1.2s ease-out;
+  position: relative;
+}
+
+.form-group > * {
+  animation: slideUp 0.6s ease-out forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.form-group > *:nth-child(1) { animation-delay: 0.1s; }
+.form-group > *:nth-child(2) { animation-delay: 0.2s; }
+.form-group > *:nth-child(3) { animation-delay: 0.3s; }
+.form-group > *:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes slideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .form-row {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+}
+
+.form-row:hover {
+  transform: translateX(3px);
 }
 
 .form-row label {
   color: var(--color-text-secondary);
   font-weight: 500;
-  min-width: 90px;
+  min-width: 100px;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-row:hover label {
+  color: var(--color-accent-primary);
+  transform: scale(1.02);
+}
+
+.label-icon {
+  margin-right: 5px;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.form-row:hover .label-icon {
+  transform: scale(1.2) rotate(10deg);
 }
 
 @media (max-width: 576px) {
@@ -622,35 +796,85 @@ h3::before {
   }
 }
 
-.task-input, .task-textarea, .importance-select, .edit-input, .edit-textarea {
-  padding: 0.75rem;
+.task-input, .task-textarea, .edit-input, .edit-textarea {
+  padding: 0.85rem;
   border: 1px solid var(--color-light-gray);
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 1rem;
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  width: 100%;
 }
 
-.task-input:focus, .task-textarea:focus, .importance-select:focus, 
-.edit-input:focus, .edit-textarea:focus {
+.task-input:hover, .task-textarea:hover, .edit-input:hover, .edit-textarea:hover {
   border-color: var(--color-accent-primary);
-  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+  box-shadow: 0 3px 8px rgba(138, 43, 226, 0.1);
+  transform: translateY(-2px);
+}
+
+.task-input:focus, .task-textarea:focus, .edit-input:focus, .edit-textarea:focus {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2), 0 3px 8px rgba(0, 0, 0, 0.1);
   outline: none;
+  transform: translateY(-2px);
 }
 
 .task-textarea, .edit-textarea {
-  min-height: 100px;
+  min-height: 120px;
   resize: vertical;
+  line-height: 1.5;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.task-textarea:focus, .edit-textarea:focus {
+  min-height: 140px;
+}
+
+/* Character counter */
+.char-counter {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-align: right;
+  margin-top: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.char-counter.near-limit {
+  color: var(--color-red);
+  font-weight: 500;
 }
 
 .importance-select {
-  padding: 0.5rem;
-  min-width: 120px;
+  padding: 0.6rem 0.8rem;
+  min-width: 140px;
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   border: 1px solid var(--color-light-gray);
   cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1em;
+  padding-right: 2.5rem;
+}
+
+.importance-select:hover {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 3px 8px rgba(138, 43, 226, 0.15);
+  transform: translateY(-2px);
+}
+
+.importance-select:focus {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2), 0 3px 8px rgba(0, 0, 0, 0.1);
+  outline: none;
+  transform: translateY(-2px);
 }
 
 .add-task-btn, .save-btn, .cancel-btn, .confirm-btn {
@@ -668,12 +892,31 @@ h3::before {
   background-color: var(--color-accent-primary);
   color: white;
   box-shadow: 0 2px 10px rgba(138, 43, 226, 0.3);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.add-task-btn::before, .save-btn::before, .confirm-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.6s;
+  z-index: -1;
+}
+
+.add-task-btn:hover::before, .save-btn:hover::before, .confirm-btn:hover::before {
+  left: 100%;
 }
 
 .add-task-btn:hover, .save-btn:hover, .confirm-btn:hover {
   background-color: var(--color-purple-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(138, 43, 226, 0.5);
 }
 
 .add-task-btn:disabled, .save-btn:disabled {
@@ -687,11 +930,36 @@ h3::before {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   border: 1px solid var(--color-light-gray);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.cancel-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: all 0.6s;
+  z-index: -1;
+}
+
+.cancel-btn:hover::before {
+  left: 100%;
 }
 
 .cancel-btn:hover {
   background-color: var(--color-light-gray);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.cancel-btn:active {
+  transform: translateY(1px);
+  transition: all 0.1s;
 }
 
 /* Tasks container styles */
@@ -699,28 +967,91 @@ h3::before {
   margin-top: 2rem;
 }
 
-.loading, .no-tasks {
+.no-tasks {
   text-align: center;
-  padding: 2rem;
+  padding: 2.5rem;
   color: var(--color-text-secondary);
   background-color: var(--color-bg-tertiary);
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--color-light-gray);
+  animation: fadeIn 0.5s ease-out, pulse 3s infinite alternate;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.no-tasks::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--color-light-gray);
+  box-shadow: var(--shadow-md);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.loading p {
+  margin-top: 1.2rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  font-weight: 500;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto 1rem;
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 0.5rem;
   border: 4px solid rgba(138, 43, 226, 0.1);
   border-radius: 50%;
   border-top-color: var(--color-accent-primary);
-  animation: spin 1s linear infinite;
-  box-shadow: 0 0 15px rgba(138, 43, 226, 0.2);
+  border-right-color: var(--color-accent-secondary);
+  animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+  box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
+  position: relative;
+}
+
+.spinner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.2) 0%, transparent 70%);
+  animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
 }
 
 @keyframes fadeIn {
@@ -729,16 +1060,7 @@ h3::before {
 }
 
 .task-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-@media (max-width: 768px) {
-  .task-list {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-  }
+  width: 100%;
 }
 
 @media (max-width: 576px) {
@@ -751,13 +1073,16 @@ h3::before {
 .task-card {
   padding: 1.5rem;
   background-color: var(--color-bg-tertiary);
-  border-radius: 8px;
+  border-radius: 12px;
   border-left: 4px solid var(--color-accent-primary); /* Default color */
   box-shadow: var(--shadow-md);
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
   overflow: hidden;
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.5s ease-out;
+  transform-origin: center;
+  will-change: transform, box-shadow, opacity;
+  backdrop-filter: blur(5px);
 }
 
 .task-card::after {
@@ -789,8 +1114,14 @@ h3::before {
 }
 
 .task-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: var(--shadow-lg), 0 10px 20px rgba(0, 0, 0, 0.2);
+  border-left-width: 6px;
+}
+
+.task-card:active {
+  transform: translateY(-2px) scale(0.98);
+  transition: all 0.2s;
 }
 
 .task-header {
@@ -827,8 +1158,23 @@ h3::before {
   margin: 0;
   font-size: 1.2rem;
   color: var(--color-text-primary);
-  word-break: break-word;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* Show full title on hover */
+.task-header h4:hover {
+  white-space: normal;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+  background-color: var(--color-bg-tertiary);
+  box-shadow: var(--shadow-sm);
+  padding: 2px 5px;
+  border-radius: 4px;
 }
 
 .task-header h4.completed {
@@ -865,16 +1211,19 @@ h3::before {
 }
 
 .status-btn, .delete-btn, .edit-btn {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  will-change: transform, box-shadow;
 }
 
 .edit-btn {
@@ -884,8 +1233,14 @@ h3::before {
 
 .edit-btn:hover {
   background-color: var(--color-purple-dark);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 8px rgba(138, 43, 226, 0.4);
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 5px 10px rgba(138, 43, 226, 0.4);
+}
+
+.edit-btn:active {
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 2px 3px rgba(138, 43, 226, 0.3);
+  transition: all 0.1s;
 }
 
 .status-btn {
@@ -895,8 +1250,14 @@ h3::before {
 
 .status-btn:hover {
   background-color: #388e3c;
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 5px 10px rgba(76, 175, 80, 0.4);
+}
+
+.status-btn:active {
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 2px 3px rgba(76, 175, 80, 0.3);
+  transition: all 0.1s;
 }
 
 .delete-btn {
@@ -906,20 +1267,92 @@ h3::before {
 
 .delete-btn:hover {
   background-color: var(--color-red-dark);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 8px rgba(255, 56, 96, 0.4);
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 5px 10px rgba(255, 56, 96, 0.4);
+}
+
+.delete-btn:active {
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 2px 3px rgba(255, 56, 96, 0.3);
+  transition: all 0.1s;
 }
 
 .icon {
-  font-size: 1rem;
+  font-size: 1.1rem;
+  transition: all 0.3s;
+  display: inline-block;
+}
+
+.edit-btn:hover .icon {
+  transform: rotate(15deg);
+}
+
+.status-btn:hover .icon {
+  transform: scale(1.2);
+}
+
+.delete-btn:hover .icon {
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+.description-container {
+  position: relative;
+  margin-bottom: 1rem;
 }
 
 .task-description {
-  margin-bottom: 1rem;
   color: var(--color-text-secondary);
   word-break: break-word;
   line-height: 1.5;
   font-size: 0.95rem;
+  max-height: 4.5rem; /* Limit to about 3 lines of text */
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 0.5rem;
+  transition: max-height 0.3s ease;
+}
+
+.task-description.expanded {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Add fade-out effect for long descriptions */
+.task-description:not(.expanded)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 1.5rem;
+  background: linear-gradient(to bottom, transparent, var(--color-bg-tertiary));
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.read-more-btn {
+  background: none;
+  border: none;
+  color: var(--color-accent-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.read-more-btn:hover {
+  color: var(--color-purple-dark);
+  text-decoration: underline;
 }
 
 .task-meta {
@@ -956,24 +1389,49 @@ h3::before {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .modal-content {
   background-color: var(--color-bg-secondary);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: 12px;
   max-width: 500px;
   width: 90%;
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(138, 43, 226, 0.3);
+  box-shadow: var(--shadow-lg), 0 0 30px rgba(138, 43, 226, 0.4);
   border: 1px solid var(--color-light-gray);
   position: relative;
   overflow: hidden;
+  animation: modalEnter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: center;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+}
+
+@keyframes modalEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
 }
 
 @media (max-width: 576px) {
@@ -1035,6 +1493,12 @@ h3::before {
 .input-wrapper {
   position: relative;
   width: 100%;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  margin-bottom: 1.2rem;
+}
+
+.input-wrapper:focus-within {
+  transform: translateY(-2px);
 }
 
 .input-focus-effect {
@@ -1044,7 +1508,8 @@ h3::before {
   width: 0;
   height: 2px;
   background: linear-gradient(90deg, var(--color-purple), var(--color-gold));
-  transition: width 0.3s ease;
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease;
+  border-radius: 2px;
 }
 
 .task-input:focus + .input-focus-effect,
@@ -1052,6 +1517,22 @@ h3::before {
 .edit-input:focus + .input-focus-effect,
 .edit-textarea:focus + .input-focus-effect {
   width: 100%;
+  box-shadow: 0 0 10px rgba(138, 43, 226, 0.4);
+}
+
+/* Add subtle animation to inputs on focus */
+.task-input:focus,
+.task-textarea:focus,
+.edit-input:focus,
+.edit-textarea:focus,
+.importance-select:focus {
+  animation: inputPulse 1s ease-in-out;
+}
+
+@keyframes inputPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.01); }
+  100% { transform: scale(1); }
 }
 
 /* Button text animation */
@@ -1076,7 +1557,8 @@ h3::before {
 @keyframes dots {
   0%, 20% { content: '.'; }
   40% { content: '..'; }
-  60%, 100% { content: '...'; }
+  60%, 80% { content: '...'; }
+  100% { content: ''; }
 }
 
 /* Label icon styling */
@@ -1097,29 +1579,97 @@ h3::before {
   position: absolute;
   top: 10px;
   right: 10px;
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   background-color: rgba(76, 175, 80, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 0;
+  z-index: 5;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+  animation: pulse 2s infinite alternate;
+  transition: all 0.3s ease;
+}
+
+.task-card:hover .completion-indicator {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
 }
 
 .completion-icon {
   color: #4caf50;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: bold;
+  text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+  animation: fadeIn 0.5s;
 }
 
-/* Hover effects for buttons */
+/* Enhanced button animations */
+.sign-out-btn,
+.add-task-btn,
+.save-btn,
+.confirm-btn,
+.cancel-btn,
+.edit-btn,
+.status-btn,
+.delete-btn {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.sign-out-btn:hover,
+.add-task-btn:hover,
+.save-btn:hover,
+.confirm-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.3), 0 0 10px rgba(138, 43, 226, 0.3);
+}
+
 .sign-out-btn:active,
 .add-task-btn:active,
 .save-btn:active,
 .confirm-btn:active {
   transform: translateY(1px);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.1s;
+}
+
+/* Button ripple effect */
+.sign-out-btn::after,
+.add-task-btn::after,
+.save-btn::after,
+.confirm-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.sign-out-btn:focus:not(:active)::after,
+.add-task-btn:focus:not(:active)::after,
+.save-btn:focus:not(:active)::after,
+.confirm-btn:focus:not(:active)::after {
+  animation: ripple 0.8s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0) translate(-50%, -50%);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20) translate(-50%, -50%);
+    opacity: 0;
+  }
 }
 
 /* Subtle pulse animation for important tasks */
@@ -1132,6 +1682,43 @@ h3::before {
   100% { box-shadow: 0 5px 15px rgba(255, 56, 96, 0.3); }
 }
 
+/* Task transition animations */
+.task-list-inner {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .task-list-inner {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+}
+
+.task-transition-enter-active,
+.task-transition-leave-active {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.task-transition-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  filter: blur(5px);
+}
+
+.task-transition-leave-to {
+  opacity: 0;
+  transform: translateY(-30px) scale(0.9);
+  filter: blur(5px);
+}
+
+/* Staggered animation for multiple items */
+.task-transition-move {
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 /* Task filtering and sorting styles */
 .tasks-container {
   margin-top: 2rem;
@@ -1141,15 +1728,52 @@ h3::before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
+  animation: fadeIn 0.8s ease-out;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.tasks-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(138, 43, 226, 0.3), 
+    rgba(255, 215, 0, 0.3), 
+    transparent
+  );
 }
 
 .tasks-header h3 {
   font-size: 1.5rem;
   color: var(--color-text-primary);
   margin: 0;
+  position: relative;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.tasks-header h3::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 2px;
+}
+
+.tasks-header:hover h3::after {
+  width: 100%;
 }
 
 .task-controls {
@@ -1157,6 +1781,8 @@ h3::before {
   gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+  animation: fadeIn 0.8s ease-out;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .filter-controls,
@@ -1175,19 +1801,38 @@ h3::before {
 
 .filter-controls select,
 .sort-controls select {
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   background-color: var(--color-bg-tertiary);
   border: 1px solid var(--color-light-gray);
   color: var(--color-text-primary);
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
 .filter-controls select:hover,
 .sort-controls select:hover {
-  border-color: var(--color-purple);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(138, 43, 226, 0.2);
+  border-color: var(--color-accent-primary);
+}
+
+.filter-controls select:focus,
+.sort-controls select:focus {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1);
+  outline: none;
+  animation: selectPulse 1s ease-in-out;
+}
+
+@keyframes selectPulse {
+  0% { box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.4), 0 4px 8px rgba(0, 0, 0, 0.1); }
+  70% { box-shadow: 0 0 0 6px rgba(138, 43, 226, 0), 0 4px 8px rgba(0, 0, 0, 0.1); }
+  100% { box-shadow: 0 0 0 0 rgba(138, 43, 226, 0), 0 4px 8px rgba(0, 0, 0, 0.1); }
 }
 
 .filter-controls select:focus,
