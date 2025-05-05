@@ -6,20 +6,39 @@ import { useToastStore } from './toast';
 export const useUserStore = defineStore('user', {
   state: () => ({
     user: null,
+    lastFetchTime: null,
+    cacheDuration: 30 * 60 * 1000, // 30 minutes cache duration
   }),
+  getters: {
+    // Check if cache is still valid
+    isCacheValid: (state) => {
+      if (!state.lastFetchTime) return false;
+      const now = new Date().getTime();
+      return (now - state.lastFetchTime) < state.cacheDuration;
+    }
+  },
   actions: {
-    async fetchUser() {
+    async fetchUser(forceRefresh = false) {
+      // Use cached user if available and not forcing refresh
+      if (this.user && this.isCacheValid && !forceRefresh) {
+        console.log('Using cached user data');
+        return this.user;
+      }
+      
       // Check for development mode user first
       const devModeUser = localStorage.getItem('dev_mode_user');
       if (devModeUser) {
         console.log('Development mode user found in localStorage');
         this.user = JSON.parse(devModeUser);
-        return;
+        this.lastFetchTime = new Date().getTime();
+        return this.user;
       }
       
       // Otherwise, try to get the user from Supabase
       const { data: { user } } = await supabase.auth.getUser();
       this.user = user;
+      this.lastFetchTime = new Date().getTime();
+      return user;
     },
     async signUp(email, password) {
       console.log('Signing up with:', email);
@@ -86,6 +105,33 @@ export const useUserStore = defineStore('user', {
         return data;
       } catch (error) {
         toastStore.error(`Sign in failed: ${error.message}`);
+        throw error;
+      }
+    },
+    
+    async signInWithGoogle() {
+      console.log('Signing in with Google...');
+      const toastStore = useToastStore();
+      
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/auth/callback'
+          }
+        });
+        
+        if (error) {
+          console.error('Google sign-in error:', error);
+          toastStore.error(`Google sign-in failed: ${error.message}`);
+          throw error;
+        }
+        
+        // This won't actually be reached immediately as the user will be redirected to Google
+        console.log('Google sign-in initiated');
+        return data;
+      } catch (error) {
+        toastStore.error(`Google sign-in failed: ${error.message}`);
         throw error;
       }
     },

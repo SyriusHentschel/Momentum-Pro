@@ -65,6 +65,17 @@
         </button>
       </form>
       
+      <!-- Social Login Options -->
+      <div class="social-login">
+        <div class="divider">
+          <span>OR</span>
+        </div>
+        <button @click.prevent="handleGoogleSignIn" class="google-btn">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon">
+          <span>Continue with Google</span>
+        </button>
+      </div>
+
       <div class="toggle-auth">
         <p>
           {{ isLogin ? "Need an account?" : "Already have an account?" }}
@@ -188,6 +199,19 @@ const handleSubmit = async () => {
     toastStore.error(error.message || 'An error occurred during authentication');
   } finally {
     loading.value = false;
+  }
+};
+
+const handleGoogleSignIn = async () => {
+  try {
+    console.log('Starting Google sign-in process...');
+    await userStore.signInWithGoogle();
+    // Note: The user will be redirected to Google's OAuth page,
+    // so the code below won't execute immediately
+    toastStore.info('Redirecting to Google for authentication...');
+  } catch (error) {
+    console.error('Google sign-in error:', error);
+    toastStore.error(error.message || 'An error occurred during Google authentication');
   }
 };
 </script>
@@ -531,8 +555,63 @@ input:focus + .input-focus-effect {
 
 /* Hover effects for buttons */
 .submit-btn:active,
-.dev-login-btn:active {
+.dev-login-btn:active,
+.google-btn:active {
   transform: translateY(1px);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Social login styles */
+.social-login {
+  margin-top: 1.5rem;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--color-light-gray);
+}
+
+.divider span {
+  padding: 0 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: white;
+  color: #757575;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.google-btn:hover {
+  background-color: #f8f8f8;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
 }
 </style>
