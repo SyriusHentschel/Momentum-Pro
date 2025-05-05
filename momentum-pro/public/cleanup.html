@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Worker Cleanup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+    }
+    .card {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #log {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+      font-family: monospace;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Service Worker Cleanup Utility</h1>
+  
+  <div class="card">
+    <h2>What This Does</h2>
+    <p>This utility helps resolve issues with service workers by:</p>
+    <ul>
+      <li>Unregistering all service workers</li>
+      <li>Clearing all cache storage</li>
+      <li>Clearing local and session storage</li>
+    </ul>
+    <p>After running this utility, you should close all browser tabs and restart your browser.</p>
+  </div>
+  
+  <div class="card">
+    <h2>Actions</h2>
+    <button id="cleanupBtn">Clean Up Service Workers & Caches</button>
+    <button id="returnBtn">Return to App</button>
+    
+    <div id="log"></div>
+  </div>
+  
+  <script>
+    const logElement = document.getElementById('log');
+    
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+      entry.className = type;
+      logElement.appendChild(entry);
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+    
+    async function cleanupServiceWorkersAndCaches() {
+      log('Starting service worker and cache cleanup...');
+      
+      // 1. Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          
+          if (registrations.length === 0) {
+            log('No service workers registered');
+          } else {
+            log(`Found ${registrations.length} service worker(s) to unregister`);
+            
+            for (let registration of registrations) {
+              log(`Unregistering service worker with scope: ${registration.scope}`);
+              const success = await registration.unregister();
+              log(`Service worker unregistered: ${success}`, success ? 'success' : 'error');
+            }
+          }
+        } catch (error) {
+          log(`Error unregistering service workers: ${error.message}`, 'error');
+        }
+      } else {
+        log('Service Worker API not available in this browser', 'error');
+      }
+      
+      // 2. Clear all caches
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          log(`Found ${cacheNames.length} cache(s) to delete`);
+          
+          for (let cacheName of cacheNames) {
+            log(`Deleting cache: ${cacheName}`);
+            const success = await caches.delete(cacheName);
+            log(`Cache deleted: ${success}`, success ? 'success' : 'error');
+          }
+        } catch (error) {
+          log(`Error clearing caches: ${error.message}`, 'error');
+        }
+      } else {
+        log('Cache API not available in this browser', 'error');
+      }
+      
+      // 3. Clear localStorage and sessionStorage
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        log('Local and session storage cleared', 'success');
+      } catch (error) {
+        log(`Error clearing storage: ${error.message}`, 'error');
+      }
+      
+      log('Service worker and cache cleanup completed', 'success');
+      log('Please close all browser tabs and reopen the application');
+    }
+    
+    document.getElementById('cleanupBtn').addEventListener('click', cleanupServiceWorkersAndCaches);
+    
+    // Reload button removed
+    
+    document.getElementById('returnBtn').addEventListener('click', () => {
+      window.location.href = '/';
+    });
+  </script>
+</body>
+</html>
