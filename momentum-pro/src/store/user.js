@@ -3,6 +3,14 @@ import { defineStore } from 'pinia';
 import { supabase } from '../supabase';
 import { useToastStore } from './toast';
 
+// Utility function for handling authentication errors
+const handleAuthError = (error, toastStore, operation) => {
+  const errorMessage = `${operation} failed: ${error.message}`;
+  console.error(`${operation} error:`, error);
+  toastStore.error(errorMessage);
+  throw error;
+};
+
 export const useUserStore = defineStore('user', {
   state: () => ({
     user: null,
@@ -45,21 +53,23 @@ export const useUserStore = defineStore('user', {
       const toastStore = useToastStore();
       
       try {
+        // Get redirect URL from environment variable or use default
+        const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || 
+                           window.location.origin + '/auth/callback';
+        
         // Standard Supabase signup with email confirmation
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + '/auth/callback'
+            emailRedirectTo: redirectUrl
           }
         });
         
         console.log('Supabase sign-up response:', data);
         
         if (error) {
-          console.error('Supabase sign-up error:', error);
-          toastStore.error(`Sign up failed: ${error.message}`);
-          throw error;
+          return handleAuthError(error, toastStore, 'Sign up');
         }
         
         // Check if email confirmation is required
@@ -76,8 +86,7 @@ export const useUserStore = defineStore('user', {
         // Return the data for handling in the component
         return data;
       } catch (error) {
-        toastStore.error(`Sign up failed: ${error.message}`);
-        throw error;
+        return handleAuthError(error, toastStore, 'Sign up');
       }
     },
     
@@ -92,8 +101,7 @@ export const useUserStore = defineStore('user', {
         });
         
         if (error) {
-          toastStore.error(`Sign in failed: ${error.message}`);
-          throw error;
+          return handleAuthError(error, toastStore, 'Sign in');
         }
         
         if (data.user) {
@@ -104,8 +112,35 @@ export const useUserStore = defineStore('user', {
         
         return data;
       } catch (error) {
-        toastStore.error(`Sign in failed: ${error.message}`);
-        throw error;
+        return handleAuthError(error, toastStore, 'Sign in');
+      }
+    },
+    
+    async signInWithGoogle() {
+      console.log('Signing in with Google...');
+      const toastStore = useToastStore();
+      
+      try {
+        // Get redirect URL from environment variable or use default
+        const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || 
+                           window.location.origin + '/auth/callback';
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl
+          }
+        });
+        
+        if (error) {
+          return handleAuthError(error, toastStore, 'Google sign-in');
+        }
+        
+        // This won't actually be reached immediately as the user will be redirected to Google
+        console.log('Google sign-in initiated');
+        return data;
+      } catch (error) {
+        return handleAuthError(error, toastStore, 'Google sign-in');
       }
     },
     
@@ -152,15 +187,13 @@ export const useUserStore = defineStore('user', {
         // Otherwise, sign out from Supabase
         const { error } = await supabase.auth.signOut();
         if (error) {
-          toastStore.error(`Sign out failed: ${error.message}`);
-          throw error;
+          return handleAuthError(error, toastStore, 'Sign out');
         }
         
         this.user = null;
         toastStore.success('Signed out successfully');
       } catch (error) {
-        toastStore.error(`Sign out failed: ${error.message}`);
-        throw error;
+        return handleAuthError(error, toastStore, 'Sign out');
       }
     }
   },

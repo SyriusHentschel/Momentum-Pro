@@ -70,9 +70,28 @@
         <div class="divider">
           <span>OR</span>
         </div>
+<<<<<<< HEAD
         <button @click.prevent="handleGoogleSignIn" class="google-btn">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon">
           <span>Continue with Google</span>
+=======
+        <button 
+          @click.prevent="handleGoogleSignIn" 
+          class="google-btn" 
+          :disabled="googleLoading"
+          aria-label="Sign in with Google"
+        >
+          <img 
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+            alt="Google" 
+            class="google-icon"
+            v-if="!googleLoading"
+          >
+          <span v-if="googleLoading" class="loading-text">
+            <span class="dot-animation">Connecting to Google</span>
+          </span>
+          <span v-else>Continue with Google</span>
+>>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
         </button>
       </div>
 
@@ -110,6 +129,7 @@ const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
 const loading = ref(false);
+const googleLoading = ref(false);
 
 const toggleAuth = () => {
   isLogin.value = !isLogin.value;
@@ -203,6 +223,13 @@ const handleSubmit = async () => {
 };
 
 const handleGoogleSignIn = async () => {
+<<<<<<< HEAD
+=======
+  if (googleLoading.value) return; // Prevent multiple clicks
+  
+  googleLoading.value = true;
+  
+>>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
   try {
     console.log('Starting Google sign-in process...');
     await userStore.signInWithGoogle();
@@ -212,7 +239,14 @@ const handleGoogleSignIn = async () => {
   } catch (error) {
     console.error('Google sign-in error:', error);
     toastStore.error(error.message || 'An error occurred during Google authentication');
+<<<<<<< HEAD
   }
+=======
+    googleLoading.value = false; // Reset loading state on error
+  }
+  
+  // We don't reset googleLoading here because the user will be redirected away
+>>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
 };
 </script>
 
@@ -609,6 +643,16 @@ input:focus + .input-focus-effect {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
+<<<<<<< HEAD
+=======
+.google-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: #f1f1f1;
+  box-shadow: none;
+}
+
+>>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
 .google-icon {
   width: 18px;
   height: 18px;
