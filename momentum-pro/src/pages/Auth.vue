@@ -85,7 +85,7 @@
           <span v-if="googleLoading" class="loading-text">
             <span class="dot-animation">Connecting to Google</span>
           </span>
-          <span v-else>Continue with Google</span>
+          <span v-else class="google-text">Continue with Google</span>
         </button>
       </div>
 
@@ -545,15 +545,15 @@ input:focus {
   justify-content: center;
   width: 100%;
   padding: 0.75rem;
-  background-color: white;
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-light-gray);
+  background-color: #ffffff; /* Pure white background */
+  color: #8a2be2; /* Deep purple color */
+  border: 1px solid #d0d0d0; /* Darker border for better definition */
   border-radius: 4px;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600; /* Bolder text */
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
 }
 
 .google-btn:hover {
@@ -574,6 +574,13 @@ input:focus {
   width: 18px;
   height: 18px;
   margin-right: 10px;
+}
+
+.google-text {
+  color: #8a2be2; /* Deep purple color */
+  font-weight: 600; /* Bold text */
+  font-size: 1.05rem; /* Larger font */
+  letter-spacing: 0.3px; /* Slightly increased letter spacing for better readability */
 }
 
 /* Loading animation */
