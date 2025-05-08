@@ -70,11 +70,6 @@
         <div class="divider">
           <span>OR</span>
         </div>
-<<<<<<< HEAD
-        <button @click.prevent="handleGoogleSignIn" class="google-btn">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon">
-          <span>Continue with Google</span>
-=======
         <button 
           @click.prevent="handleGoogleSignIn" 
           class="google-btn" 
@@ -91,7 +86,6 @@
             <span class="dot-animation">Connecting to Google</span>
           </span>
           <span v-else>Continue with Google</span>
->>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
         </button>
       </div>
 
@@ -223,13 +217,10 @@ const handleSubmit = async () => {
 };
 
 const handleGoogleSignIn = async () => {
-<<<<<<< HEAD
-=======
   if (googleLoading.value) return; // Prevent multiple clicks
   
   googleLoading.value = true;
   
->>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
   try {
     console.log('Starting Google sign-in process...');
     await userStore.signInWithGoogle();
@@ -239,14 +230,10 @@ const handleGoogleSignIn = async () => {
   } catch (error) {
     console.error('Google sign-in error:', error);
     toastStore.error(error.message || 'An error occurred during Google authentication');
-<<<<<<< HEAD
-  }
-=======
     googleLoading.value = false; // Reset loading state on error
   }
   
   // We don't reset googleLoading here because the user will be redirected away
->>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
 };
 </script>
 
@@ -517,82 +504,12 @@ input:focus {
     padding: 0.65rem;
     font-size: 0.85rem;
   }
-  
-  .dev-login {
-    margin-top: 1.5rem;
-    padding-top: 1.2rem;
-  }
 }
 
 .dev-login-btn:hover {
   background-color: var(--color-gold-dark);
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(255, 215, 0, 0.4);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Enhanced input styling */
-.input-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.input-focus-effect {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--color-purple), var(--color-gold));
-  transition: width 0.3s ease;
-}
-
-input:focus + .input-focus-effect {
-  width: 100%;
-}
-
-/* Label icon styling */
-.label-icon {
-  display: inline-block;
-  margin-right: 5px;
-  font-size: 0.9rem;
-}
-
-/* Loading animation */
-.loading-text {
-  display: inline-block;
-}
-
-.dot-animation::after {
-  content: '...';
-  display: inline-block;
-  width: 1em;
-  text-align: left;
-  animation: dots 1.5s infinite;
-}
-
-@keyframes dots {
-  0%, 20% { content: '.'; }
-  40% { content: '..'; }
-  60%, 100% { content: '...'; }
-}
-
-/* Button text animation */
-.btn-text {
-  position: relative;
-  z-index: 1;
-}
-
-/* Hover effects for buttons */
-.submit-btn:active,
-.dev-login-btn:active,
-.google-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 /* Social login styles */
@@ -604,7 +521,7 @@ input:focus + .input-focus-effect {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 1rem 0;
+  margin-bottom: 1.2rem;
 }
 
 .divider::before,
@@ -615,10 +532,11 @@ input:focus + .input-focus-effect {
 }
 
 .divider span {
-  padding: 0 0.5rem;
+  padding: 0 10px;
   color: var(--color-text-muted);
   font-size: 0.8rem;
   font-weight: 500;
+  letter-spacing: 1px;
 }
 
 .google-btn {
@@ -628,34 +546,85 @@ input:focus + .input-focus-effect {
   width: 100%;
   padding: 0.75rem;
   background-color: white;
-  color: #757575;
-  border: 1px solid #ddd;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-light-gray);
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .google-btn:hover {
   background-color: #f8f8f8;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
-<<<<<<< HEAD
-=======
 .google-btn:disabled {
   opacity: 0.7;
-  cursor: not-allowed;
   background-color: #f1f1f1;
+  cursor: not-allowed;
+  transform: none;
   box-shadow: none;
 }
 
->>>>>>> 3e3203f ( Optimized Google Sign-In: Consolidate error handling improve UX add environment variable support)
 .google-icon {
   width: 18px;
   height: 18px;
   margin-right: 10px;
+}
+
+/* Loading animation */
+.loading-text {
+  display: inline-block;
+}
+
+.dot-animation::after {
+  content: '...';
+  display: inline-block;
+  animation: dots 1.5s infinite;
+  width: 24px;
+  text-align: left;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+/* Input focus effect */
+.input-wrapper {
+  position: relative;
+}
+
+.input-focus-effect {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-purple), var(--color-gold));
+  transition: all 0.3s;
+  transform: translateX(-50%);
+}
+
+.input-wrapper input:focus + .input-focus-effect {
+  width: 100%;
+}
+
+/* Label icon */
+.label-icon {
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 0.9rem;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
