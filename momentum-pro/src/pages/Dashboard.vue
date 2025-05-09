@@ -2,9 +2,14 @@
   <div class="dashboard-container">
     <header class="dashboard-header">
       <h1>Momentum Pro</h1>
-      <button @click="handleSignOut" class="sign-out-btn">
-        <span class="btn-text">Sign Out</span>
-      </button>
+      <div class="header-actions">
+        <router-link to="/profile" class="profile-btn">
+          <span class="btn-text">My Profile</span>
+        </router-link>
+        <button @click="handleSignOut" class="sign-out-btn">
+          <span class="btn-text">Sign Out</span>
+        </button>
+      </div>
     </header>
     
     <main class="dashboard-content">
@@ -561,6 +566,59 @@ const formatDate = (dateString) => {
   .dashboard-header h1 {
     font-size: 1.8rem;
   }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: 576px) {
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.profile-btn {
+  padding: 0.6rem 1.2rem;
+  background-color: var(--color-purple);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(138, 43, 226, 0.3);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.profile-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.6s;
+  z-index: -1;
+}
+
+.profile-btn:hover::before {
+  left: 100%;
+}
+
+.profile-btn:hover {
+  background-color: var(--color-purple-dark, #6a1b9a);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.4);
 }
 
 .sign-out-btn {

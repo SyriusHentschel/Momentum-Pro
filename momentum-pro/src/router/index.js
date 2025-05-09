@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Dashboard from '../pages/Dashboard.vue';
 import Auth from '../pages/Auth.vue';
 import AuthCallback from '../pages/AuthCallback.vue';
+import ProfilePage from '../pages/ProfilePage.vue';
 import { supabase } from '../supabase';
 
 const routes = [
@@ -9,6 +10,12 @@ const routes = [
     path: '/',
     name: 'Dashboard',
     component: Dashboard,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfilePage,
     meta: { requiresAuth: true }
   },
   {
