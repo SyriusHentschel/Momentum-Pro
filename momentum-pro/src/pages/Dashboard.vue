@@ -4,16 +4,18 @@
       <h1>Momentum Pro</h1>
       <div class="header-actions">
         <router-link to="/profile" class="profile-btn">
+          <span class="profile-icon">👤</span>
           <span class="btn-text">My Profile</span>
         </router-link>
         <button @click="handleSignOut" class="sign-out-btn">
+          <span class="sign-out-icon">🚪</span>
           <span class="btn-text">Sign Out</span>
         </button>
       </div>
     </header>
     
     <main class="dashboard-content">
-      <h2>Welcome, {{ userEmail }}</h2>
+      <h2>Welcome, {{ userDisplayName }}</h2>
       
       <!-- Old notification area removed - now using toast notifications -->
       
@@ -281,7 +283,18 @@ const taskToDelete = ref(null);
 // Description expansion state
 const expandedDescriptions = ref({});
 
-const userEmail = computed(() => {
+// Get user display name from profile or fallback to email
+const userDisplayName = computed(() => {
+  // Try to get user profile from localStorage
+  const savedProfile = localStorage.getItem('user_profile');
+  if (savedProfile) {
+    const userProfile = JSON.parse(savedProfile);
+    if (userProfile.display_name) {
+      return userProfile.display_name;
+    }
+  }
+  
+  // Fallback to email or default
   return user.value?.email || 'User';
 });
 
@@ -596,7 +609,9 @@ const formatDate = (dateString) => {
   overflow: hidden;
   z-index: 1;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .profile-btn::before {
@@ -621,6 +636,10 @@ const formatDate = (dateString) => {
   box-shadow: 0 4px 12px rgba(138, 43, 226, 0.4);
 }
 
+.profile-icon {
+  font-size: 1.1rem;
+}
+
 .sign-out-btn {
   padding: 0.6rem 1.2rem;
   background-color: var(--color-red);
@@ -635,6 +654,13 @@ const formatDate = (dateString) => {
   position: relative;
   overflow: hidden;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sign-out-icon {
+  font-size: 1.1rem;
 }
 
 .sign-out-btn::before {

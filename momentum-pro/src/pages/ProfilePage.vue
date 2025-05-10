@@ -13,27 +13,199 @@
         <p>Loading profile...</p>
       </div>
       
-      <div v-else class="profile-card">
-        <h2>User Information</h2>
-        <div class="profile-info">
-          <div class="info-item">
-            <label>Email:</label>
-            <p>{{ user?.email || 'Not available' }}</p>
+      <div v-else class="profile-grid">
+        <!-- Profile Card -->
+        <div class="profile-card">
+          <div class="profile-header-section">
+            <div class="profile-avatar-container">
+              <div class="profile-avatar" :style="avatarStyle">
+                <span v-if="!profileImage" class="avatar-initials">{{ userInitials }}</span>
+              </div>
+              <button @click="triggerFileInput" class="avatar-upload-btn" title="Upload profile picture">
+                <span class="icon">📷</span>
+              </button>
+              <input 
+                type="file" 
+                ref="fileInput" 
+                @change="handleFileUpload" 
+                accept="image/*" 
+                class="file-input"
+              />
+            </div>
+            <div class="profile-name-section">
+              <h2>{{ displayName }}</h2>
+              <p class="member-since">Member since {{ formatDate(user?.created_at, true) || 'N/A' }}</p>
+            </div>
           </div>
           
-          <div class="info-item">
-            <label>User ID:</label>
-            <p>{{ user?.id || 'Not available' }}</p>
+          <div class="profile-tabs">
+            <button 
+              @click="activeTab = 'info'" 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'info' }"
+            >
+              Information
+            </button>
+            <button 
+              @click="activeTab = 'edit'" 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'edit' }"
+            >
+              Edit Profile
+            </button>
+            <button 
+              @click="activeTab = 'preferences'" 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'preferences' }"
+            >
+              Preferences
+            </button>
           </div>
           
-          <div class="info-item">
-            <label>Last Sign In:</label>
-            <p>{{ formatDate(user?.last_sign_in_at) || 'Not available' }}</p>
+          <!-- Information Tab -->
+          <div v-if="activeTab === 'info'" class="tab-content">
+            <h3>User Information</h3>
+            <div class="profile-info">
+              <div class="info-item">
+                <label>Email:</label>
+                <p>{{ user?.email || 'Not available' }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Display Name:</label>
+                <p>{{ userProfile.display_name || 'Not set' }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Last Sign In:</label>
+                <p>{{ formatDate(user?.last_sign_in_at) || 'Not available' }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Account Type:</label>
+                <p>{{ getAccountType() }}</p>
+              </div>
+            </div>
+            
+            <div class="account-actions">
+              <button @click="showPasswordModal = true" class="action-btn">
+                Change Password
+              </button>
+              <button @click="showDeleteAccountModal = true" class="action-btn danger">
+                Delete Account
+              </button>
+            </div>
+          </div>
+          
+          <!-- Edit Profile Tab -->
+          <div v-if="activeTab === 'edit'" class="tab-content">
+            <h3>Edit Profile</h3>
+            <form @submit.prevent="updateProfile" class="edit-profile-form">
+              <div class="form-group">
+                <label for="displayName">Display Name</label>
+                <div class="input-wrapper">
+                  <input 
+                    type="text" 
+                    id="displayName" 
+                    v-model="userProfile.display_name" 
+                    placeholder="Enter your display name"
+                  />
+                  <span class="input-focus-effect"></span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="bio">Bio</label>
+                <div class="input-wrapper">
+                  <textarea 
+                    id="bio" 
+                    v-model="userProfile.bio" 
+                    placeholder="Tell us about yourself"
+                    rows="3"
+                  ></textarea>
+                  <span class="input-focus-effect"></span>
+                </div>
+              </div>
+              
+              <button type="submit" class="submit-btn" :disabled="isUpdating">
+                <span v-if="isUpdating" class="loading-text">
+                  <span class="dot-animation">Updating</span>
+                </span>
+                <span v-else>Save Changes</span>
+              </button>
+            </form>
+          </div>
+          
+          <!-- Preferences Tab -->
+          <div v-if="activeTab === 'preferences'" class="tab-content">
+            <h3>App Preferences</h3>
+            
+            <div class="preference-section">
+              <h4>Theme</h4>
+              <div class="theme-options">
+                <button 
+                  @click="setTheme('light')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'light' }"
+                >
+                  <span class="theme-icon">☀️</span>
+                  <span>Light</span>
+                </button>
+                <button 
+                  @click="setTheme('dark')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'dark' }"
+                >
+                  <span class="theme-icon">🌙</span>
+                  <span>Dark</span>
+                </button>
+                <button 
+                  @click="setTheme('system')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'system' }"
+                >
+                  <span class="theme-icon">💻</span>
+                  <span>System</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="preference-section">
+              <h4>Task Display</h4>
+              <div class="form-group">
+                <label for="defaultTaskFilter">Default Task Filter</label>
+                <select 
+                  id="defaultTaskFilter" 
+                  v-model="userPreferences.defaultTaskFilter"
+                  @change="savePreferences"
+                >
+                  <option value="all">All Tasks</option>
+                  <option value="incomplete">Incomplete Tasks</option>
+                  <option value="complete">Completed Tasks</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="defaultTaskSort">Default Task Sort</label>
+                <select 
+                  id="defaultTaskSort" 
+                  v-model="userPreferences.defaultTaskSort"
+                  @change="savePreferences"
+                >
+                  <option value="date-desc">Newest First</option>
+                  <option value="date-asc">Oldest First</option>
+                  <option value="importance">By Importance</option>
+                  <option value="alphabetical">Alphabetical</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div class="profile-stats">
+        <!-- Stats Card -->
+        <div class="stats-card">
           <h3>Task Statistics</h3>
+          
           <div class="stats-grid">
             <div class="stat-card">
               <span class="stat-value">{{ totalTasks }}</span>
@@ -49,29 +221,311 @@
               <span class="stat-value">{{ incompleteTasks }}</span>
               <span class="stat-label">Pending</span>
             </div>
+            
+            <div class="stat-card">
+              <span class="stat-value">{{ completionRate }}%</span>
+              <span class="stat-label">Completion Rate</span>
+            </div>
+          </div>
+          
+          <div class="task-chart">
+            <h4>Task Importance Distribution</h4>
+            <div class="chart-container">
+              <div class="chart-bar-container">
+                <div 
+                  class="chart-bar importance-high" 
+                  :style="{ width: `${highImportancePercentage}%` }"
+                  title="High Importance"
+                ></div>
+                <span class="chart-label">High: {{ highImportanceTasks }}</span>
+              </div>
+              
+              <div class="chart-bar-container">
+                <div 
+                  class="chart-bar importance-medium" 
+                  :style="{ width: `${mediumImportancePercentage}%` }"
+                  title="Medium Importance"
+                ></div>
+                <span class="chart-label">Medium: {{ mediumImportanceTasks }}</span>
+              </div>
+              
+              <div class="chart-bar-container">
+                <div 
+                  class="chart-bar importance-low" 
+                  :style="{ width: `${lowImportancePercentage}%` }"
+                  title="Low Importance"
+                ></div>
+                <span class="chart-label">Low: {{ lowImportanceTasks }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="activity-summary">
+            <h4>Recent Activity</h4>
+            <div v-if="recentTasks.length === 0" class="no-activity">
+              No recent task activity
+            </div>
+            <ul v-else class="activity-list">
+              <li v-for="task in recentTasks" :key="task.id" class="activity-item">
+                <span class="activity-icon" :class="{ 'completed': task.is_complete }">
+                  {{ task.is_complete ? '✓' : '🔄' }}
+                </span>
+                <div class="activity-details">
+                  <span class="activity-title">{{ task.title }}</span>
+                  <span class="activity-date">{{ formatDate(task.created_at) }}</span>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
     </main>
+    
+    <!-- Change Password Modal -->
+    <div v-if="showPasswordModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Change Password</h3>
+        <form @submit.prevent="changePassword" class="password-form">
+          <div class="form-group">
+            <label for="currentPassword">Current Password</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="currentPassword" 
+                v-model="passwordForm.currentPassword" 
+                required
+                placeholder="Enter your current password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="newPassword" 
+                v-model="passwordForm.newPassword" 
+                required
+                placeholder="Enter your new password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirmPassword">Confirm New Password</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                v-model="passwordForm.confirmPassword" 
+                required
+                placeholder="Confirm your new password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="submit" class="confirm-btn" :disabled="isPasswordChanging">
+              <span v-if="isPasswordChanging" class="loading-text">
+                <span class="dot-animation">Updating</span>
+              </span>
+              <span v-else>Change Password</span>
+            </button>
+            <button type="button" @click="showPasswordModal = false" class="cancel-btn">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Delete Account Modal -->
+    <div v-if="showDeleteAccountModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Delete Account</h3>
+        <p class="warning-text">
+          Warning: This action cannot be undone. All your data, including tasks and preferences, will be permanently deleted.
+        </p>
+        <form @submit.prevent="deleteAccount" class="delete-account-form">
+          <div class="form-group">
+            <label for="confirmEmail">Confirm your email</label>
+            <div class="input-wrapper">
+              <input 
+                type="email" 
+                id="confirmEmail" 
+                v-model="deleteAccountForm.email" 
+                required
+                placeholder="Enter your email to confirm"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirmPassword">Enter your password</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                v-model="deleteAccountForm.password" 
+                required
+                placeholder="Enter your password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="submit" class="danger-btn" :disabled="isDeleting">
+              <span v-if="isDeleting" class="loading-text">
+                <span class="dot-animation">Deleting</span>
+              </span>
+              <span v-else>Permanently Delete Account</span>
+            </button>
+            <button type="button" @click="showDeleteAccountModal = false" class="cancel-btn">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '../store/user';
 import { useTaskStore } from '../store/task';
+import { useToastStore } from '../store/toast';
+import { usePreferencesStore } from '../store/preferences';
 
+const router = useRouter();
 const userStore = useUserStore();
 const taskStore = useTaskStore();
+const toastStore = useToastStore();
+const preferencesStore = usePreferencesStore();
+
 const { user } = storeToRefs(userStore);
 const { tasks } = storeToRefs(taskStore);
 const isLoading = ref(true);
+const activeTab = ref('info');
+const profileImage = ref(null);
+const fileInput = ref(null);
+
+// User profile data
+const userProfile = ref({
+  display_name: '',
+  bio: '',
+  avatar_url: null
+});
+
+// User preferences
+const userPreferences = ref({
+  theme: preferencesStore.theme || 'system',
+  defaultTaskFilter: preferencesStore.taskFilter || 'all',
+  defaultTaskSort: preferencesStore.taskSort || 'date-desc'
+});
+
+// Form states
+const isUpdating = ref(false);
+const showPasswordModal = ref(false);
+const showDeleteAccountModal = ref(false);
+const isPasswordChanging = ref(false);
+const isDeleting = ref(false);
+
+// Form data
+const passwordForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+
+const deleteAccountForm = ref({
+  email: '',
+  password: ''
+});
+
+// Computed properties for user display
+const userInitials = computed(() => {
+  if (userProfile.value.display_name) {
+    return userProfile.value.display_name
+      .split(' ')
+      .map(name => name.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  }
+  
+  if (user.value?.email) {
+    return user.value.email.charAt(0).toUpperCase();
+  }
+  
+  return 'U';
+});
+
+const displayName = computed(() => {
+  return userProfile.value.display_name || user.value?.email?.split('@')[0] || 'User';
+});
+
+const avatarStyle = computed(() => {
+  if (profileImage.value) {
+    return { backgroundImage: `url(${profileImage.value})` };
+  }
+  return {};
+});
 
 // Computed properties for task statistics
 const totalTasks = computed(() => tasks.value?.length || 0);
 const completedTasks = computed(() => tasks.value?.filter(task => task.is_complete).length || 0);
 const incompleteTasks = computed(() => tasks.value?.filter(task => !task.is_complete).length || 0);
+
+const completionRate = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((completedTasks.value / totalTasks.value) * 100);
+});
+
+// Task importance statistics
+const highImportanceTasks = computed(() => 
+  tasks.value?.filter(task => task.importance === 'high').length || 0
+);
+
+const mediumImportanceTasks = computed(() => 
+  tasks.value?.filter(task => task.importance === 'medium' || !task.importance).length || 0
+);
+
+const lowImportanceTasks = computed(() => 
+  tasks.value?.filter(task => task.importance === 'low').length || 0
+);
+
+const highImportancePercentage = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((highImportanceTasks.value / totalTasks.value) * 100);
+});
+
+const mediumImportancePercentage = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((mediumImportanceTasks.value / totalTasks.value) * 100);
+});
+
+const lowImportancePercentage = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((lowImportanceTasks.value / totalTasks.value) * 100);
+});
+
+// Recent tasks (last 5)
+const recentTasks = computed(() => {
+  if (!tasks.value) return [];
+  
+  return [...tasks.value]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5);
+});
 
 onMounted(async () => {
   try {
@@ -84,18 +538,40 @@ onMounted(async () => {
     if (!tasks.value || tasks.value.length === 0) {
       await taskStore.fetchTasks();
     }
+    
+    // Fetch user profile data
+    // This would normally come from a database, but for now we'll use localStorage
+    const savedProfile = localStorage.getItem('user_profile');
+    if (savedProfile) {
+      userProfile.value = JSON.parse(savedProfile);
+      
+      // Load profile image if available
+      if (userProfile.value.avatar_url) {
+        profileImage.value = userProfile.value.avatar_url;
+      }
+    }
   } catch (error) {
     console.error('Error loading profile data:', error);
+    toastStore.error('Failed to load profile data');
   } finally {
     isLoading.value = false;
   }
 });
 
 // Helper function to format dates
-const formatDate = (dateString) => {
+const formatDate = (dateString, shortFormat = false) => {
   if (!dateString) return null;
   
   const date = new Date(dateString);
+  
+  if (shortFormat) {
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  }
+  
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
@@ -104,6 +580,161 @@ const formatDate = (dateString) => {
     minute: '2-digit'
   }).format(date);
 };
+
+// Get account type based on user provider
+const getAccountType = () => {
+  if (!user.value) return 'Unknown';
+  
+  // Check if this is a development mode user
+  if (localStorage.getItem('dev_mode_user')) {
+    return 'Development Account';
+  }
+  
+  // Check for provider in identities
+  if (user.value.app_metadata?.provider === 'google') {
+    return 'Google Account';
+  }
+  
+  return 'Email Account';
+};
+
+// Profile picture upload
+const triggerFileInput = () => {
+  fileInput.value.click();
+};
+
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Check file type
+  if (!file.type.match('image.*')) {
+    toastStore.error('Please select an image file');
+    return;
+  }
+  
+  // Check file size (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    toastStore.error('Image size should be less than 2MB');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    profileImage.value = e.target.result;
+    userProfile.value.avatar_url = e.target.result;
+    saveProfile();
+  };
+  reader.readAsDataURL(file);
+};
+
+// Save profile to localStorage (in a real app, this would save to a database)
+const saveProfile = () => {
+  localStorage.setItem('user_profile', JSON.stringify(userProfile.value));
+};
+
+// Update profile
+const updateProfile = async () => {
+  isUpdating.value = true;
+  
+  try {
+    // In a real app, this would be an API call to update the profile
+    // For now, we'll just save to localStorage
+    saveProfile();
+    toastStore.success('Profile updated successfully');
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    toastStore.error('Failed to update profile');
+  } finally {
+    isUpdating.value = false;
+  }
+};
+
+// Theme preferences
+const setTheme = (theme) => {
+  userPreferences.value.theme = theme;
+  preferencesStore.setTheme(theme);
+  savePreferences();
+  
+  // Apply theme
+  document.documentElement.setAttribute('data-theme', theme === 'system' 
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme
+  );
+};
+
+// Save preferences
+const savePreferences = () => {
+  preferencesStore.setTaskFilter(userPreferences.value.defaultTaskFilter);
+  preferencesStore.setTaskSort(userPreferences.value.defaultTaskSort);
+  preferencesStore.setTheme(userPreferences.value.theme);
+  toastStore.success('Preferences saved');
+};
+
+// Change password
+const changePassword = async () => {
+  // Validate passwords match
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    toastStore.error('New passwords do not match');
+    return;
+  }
+  
+  isPasswordChanging.value = true;
+  
+  try {
+    // In a real implementation, this would call the Supabase API to update the password
+    // For this demo, we'll just simulate success
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    toastStore.success('Password changed successfully');
+    showPasswordModal.value = false;
+    
+    // Reset form
+    passwordForm.value = {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    };
+  } catch (error) {
+    console.error('Error changing password:', error);
+    toastStore.error('Failed to change password');
+  } finally {
+    isPasswordChanging.value = false;
+  }
+};
+
+// Delete account
+const deleteAccount = async () => {
+  // Validate email matches
+  if (deleteAccountForm.value.email !== user.value?.email) {
+    toastStore.error('Email does not match your account');
+    return;
+  }
+  
+  isDeleting.value = true;
+  
+  try {
+    // In a real implementation, this would call the Supabase API to delete the account
+    // For this demo, we'll just simulate success
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Clear all local storage
+    localStorage.removeItem('user_profile');
+    localStorage.removeItem('dev_mode_user');
+    
+    // Sign out
+    await userStore.signOut();
+    
+    toastStore.success('Account deleted successfully');
+    router.push('/auth');
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    toastStore.error('Failed to delete account');
+  } finally {
+    isDeleting.value = false;
+    showDeleteAccountModal.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -111,7 +742,7 @@ const formatDate = (dateString) => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  color: var(--text-color);
+  color: var(--color-text-primary);
 }
 
 .profile-header {
@@ -120,13 +751,13 @@ const formatDate = (dateString) => {
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .profile-header h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--color-accent-primary);
   margin: 0;
 }
 
@@ -134,16 +765,19 @@ const formatDate = (dateString) => {
   display: inline-flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  background-color: var(--primary-color);
+  background-color: var(--color-accent-primary);
   color: white;
   border-radius: 4px;
   text-decoration: none;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .back-btn:hover {
-  background-color: var(--primary-color-dark);
+  background-color: var(--color-purple-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .loading {
@@ -159,7 +793,7 @@ const formatDate = (dateString) => {
   height: 40px;
   border: 4px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
-  border-top-color: var(--primary-color);
+  border-top-color: var(--color-accent-primary);
   animation: spin 1s ease-in-out infinite;
   margin-bottom: 1rem;
 }
@@ -168,22 +802,157 @@ const formatDate = (dateString) => {
   to { transform: rotate(360deg); }
 }
 
-.profile-card {
-  background-color: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+/* Profile Grid Layout */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
 }
 
-.profile-card h2 {
-  font-size: 1.5rem;
+@media (max-width: 992px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Profile Card Styles */
+.profile-card, .stats-card {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, 
+    var(--color-purple) 0%, 
+    var(--color-gold) 50%, 
+    var(--color-red) 100%);
+  z-index: 2;
+}
+
+.profile-header-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar-container {
+  position: relative;
+  margin-right: 1.5rem;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: var(--color-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-accent-primary);
+  border: 3px solid var(--color-accent-primary);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.avatar-initials {
+  text-transform: uppercase;
+}
+
+.avatar-upload-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.avatar-upload-btn:hover {
+  background-color: var(--color-purple-dark);
+  transform: scale(1.1);
+}
+
+.file-input {
+  display: none;
+}
+
+.profile-name-section {
+  flex: 1;
+}
+
+.profile-name-section h2 {
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text-primary);
+}
+
+.member-since {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Tabs */
+.profile-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  padding: 0.75rem 1.25rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  color: var(--color-accent-primary);
+}
+
+.tab-btn.active {
+  color: var(--color-accent-primary);
+  border-bottom-color: var(--color-accent-primary);
+}
+
+.tab-content {
+  padding: 1rem 0;
+}
+
+.tab-content h3 {
+  font-size: 1.25rem;
   margin-top: 0;
   margin-bottom: 1.5rem;
-  color: var(--heading-color);
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.5rem;
+  color: var(--color-text-primary);
 }
 
+/* Profile Info */
 .profile-info {
   margin-bottom: 2rem;
 }
@@ -191,54 +960,487 @@ const formatDate = (dateString) => {
 .info-item {
   display: flex;
   margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.info-item:last-child {
+  border-bottom: none;
 }
 
 .info-item label {
   font-weight: 600;
-  width: 120px;
-  color: var(--label-color);
+  width: 140px;
+  color: var(--color-text-secondary);
 }
 
 .info-item p {
   margin: 0;
+  flex: 1;
 }
 
-.profile-stats h3 {
-  font-size: 1.25rem;
+/* Account Actions */
+.account-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.action-btn {
+  padding: 0.75rem 1.25rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.action-btn:hover {
+  background-color: var(--color-bg-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn.danger {
+  color: var(--color-red);
+  border-color: var(--color-red);
+}
+
+.action-btn.danger:hover {
+  background-color: var(--color-red);
+  color: white;
+}
+
+/* Edit Profile Form */
+.edit-profile-form {
+  max-width: 100%;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+  transition: all 0.3s;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+  outline: none;
+}
+
+.input-focus-effect {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-accent-primary);
+  transition: width 0.3s;
+}
+
+input:focus ~ .input-focus-effect,
+textarea:focus ~ .input-focus-effect {
+  width: 100%;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3);
+}
+
+.submit-btn:hover {
+  background-color: var(--color-purple-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(138, 43, 226, 0.4);
+}
+
+.submit-btn:disabled {
+  background-color: var(--color-light-gray);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Theme Options */
+.preference-section {
+  margin-bottom: 2rem;
+}
+
+.preference-section h4 {
+  font-size: 1.1rem;
   margin-bottom: 1rem;
-  color: var(--heading-color);
+  color: var(--color-text-primary);
+}
+
+.theme-options {
+  display: flex;
+  gap: 1rem;
+}
+
+.theme-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid var(--color-border);
+  background-color: var(--color-bg-tertiary);
+  cursor: pointer;
+  transition: all 0.3s;
+  flex: 1;
+}
+
+.theme-btn.active {
+  border-color: var(--color-accent-primary);
+  background-color: rgba(138, 43, 226, 0.1);
+}
+
+.theme-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.theme-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Stats Card */
+.stats-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-card h3 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .stat-card {
-  background-color: var(--bg-light);
-  border-radius: 6px;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 8px;
   padding: 1.5rem;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .stat-value {
   display: block;
   font-size: 2rem;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--color-accent-primary);
   margin-bottom: 0.5rem;
 }
 
 .stat-label {
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
+/* Task Chart */
+.task-chart {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 8px;
+}
+
+.task-chart h4 {
+  font-size: 1.1rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chart-bar-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-bar {
+  height: 20px;
+  border-radius: 10px;
+  transition: width 1s ease-in-out;
+}
+
+.chart-bar.importance-high {
+  background-color: var(--color-red);
+}
+
+.chart-bar.importance-medium {
+  background-color: var(--color-gold);
+}
+
+.chart-bar.importance-low {
+  background-color: var(--color-green);
+}
+
+.chart-label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* Activity Summary */
+.activity-summary {
+  padding: 1.5rem;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 8px;
+}
+
+.activity-summary h4 {
+  font-size: 1.1rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.no-activity {
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: var(--color-bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+}
+
+.activity-icon.completed {
+  background-color: var(--color-green);
+  color: white;
+}
+
+.activity-details {
+  flex: 1;
+}
+
+.activity-title {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-primary);
+}
+
+.activity-date {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.modal-content {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content h3 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+.warning-text {
+  color: var(--color-red);
+  background-color: rgba(255, 0, 0, 0.1);
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.confirm-btn, .cancel-btn, .danger-btn {
+  padding: 0.75rem 1.25rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.confirm-btn {
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+}
+
+.confirm-btn:hover {
+  background-color: var(--color-purple-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cancel-btn {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.cancel-btn:hover {
+  background-color: var(--color-bg-light);
+}
+
+.danger-btn {
+  background-color: var(--color-red);
+  color: white;
+  border: none;
+}
+
+.danger-btn:hover {
+  background-color: darkred;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading Animation */
+.loading-text {
+  display: inline-block;
+}
+
+.dot-animation::after {
+  content: '...';
+  display: inline-block;
+  animation: dots 1.5s infinite;
+  width: 24px;
+  text-align: left;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
   .profile-container {
     padding: 1rem;
+  }
+  
+  .profile-header-section {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-avatar-container {
+    margin-right: 0;
+    margin-bottom: 1.5rem;
   }
   
   .info-item {
@@ -248,6 +1450,18 @@ const formatDate = (dateString) => {
   .info-item label {
     width: 100%;
     margin-bottom: 0.25rem;
+  }
+  
+  .theme-options {
+    flex-direction: column;
+  }
+  
+  .account-actions {
+    flex-direction: column;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
