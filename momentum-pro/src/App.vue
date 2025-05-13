@@ -1,4 +1,4 @@
-<template>
+yes<template>
   <div class="app-container">
     <!-- Background elements -->
     <div class="app-background">
@@ -20,16 +20,21 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useUserStore } from './store/user.js'
+import { usePreferencesStore } from './store/preferences.js'
 import ToastNotification from './components/ToastNotification.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const preferencesStore = usePreferencesStore()
 const { user } = storeToRefs(userStore)
 
 onMounted(async () => {
   try {
     // Add a class to the body for additional styling
     document.body.classList.add('momentum-app-body');
+    
+    // Initialize theme
+    preferencesStore.initTheme();
     
     await userStore.fetchUser() // here we call fetch user
     if (!user.value) {
@@ -131,18 +136,25 @@ body {
   width: 100%;
   height: 100%;
   background: 
-    /* 
-      Dark gradient overlay - adjust the opacity values (0.92 and 0.95) to control darkness:
-      - Higher values (closer to 1) make the overlay darker
-      - Lower values (closer to 0) make the overlay more transparent
-      - Try values between 0.85 and 0.98 for best results
-    */
-    linear-gradient(135deg, rgba(18, 18, 18, 0.92) 0%, rgba(18, 18, 18, 0.95) 100%),
+    /* Dark gradient overlay using theme variables */
+    linear-gradient(135deg, 
+      var(--color-bg-primary) 0%, 
+      var(--color-bg-secondary) 100%
+    ),
     
-    /* Colored gradients for visual interest - these add subtle color accents */
-    linear-gradient(135deg, rgba(138, 43, 226, 0.05) 0%, transparent 50%),
-    linear-gradient(225deg, rgba(255, 215, 0, 0.05) 0%, transparent 50%),
-    linear-gradient(315deg, rgba(255, 56, 96, 0.05) 0%, transparent 50%);
+    /* Colored gradients using theme accent colors */
+    linear-gradient(135deg, 
+      color-mix(in srgb, var(--color-accent-primary) 5%, transparent) 0%, 
+      transparent 50%
+    ),
+    linear-gradient(225deg, 
+      color-mix(in srgb, var(--color-accent-secondary) 5%, transparent) 0%, 
+      transparent 50%
+    ),
+    linear-gradient(315deg, 
+      color-mix(in srgb, var(--color-accent-danger) 5%, transparent) 0%, 
+      transparent 50%
+    );
   z-index: 3; /* Above the image */
 }
 
@@ -154,8 +166,8 @@ body {
   width: 100%;
   height: 100%;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--color-text-primary) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-text-primary) 3%, transparent) 1px, transparent 1px);
   background-size: 20px 20px;
   z-index: 4; /* Above the overlay */
 }

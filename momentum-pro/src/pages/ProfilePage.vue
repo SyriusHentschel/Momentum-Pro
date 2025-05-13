@@ -144,28 +144,36 @@
               <h4>Theme</h4>
               <div class="theme-options">
                 <button 
-                  @click="setTheme('light')" 
+                  @click="setTheme('dark-default')" 
                   class="theme-btn" 
-                  :class="{ active: userPreferences.theme === 'light' }"
+                  :class="{ active: userPreferences.theme === 'dark-default' }"
                 >
-                  <span class="theme-icon">☀️</span>
-                  <span>Light</span>
+                  <span class="theme-icon">🌑</span>
+                  <span>Dark Default</span>
                 </button>
                 <button 
-                  @click="setTheme('dark')" 
+                  @click="setTheme('light-gold')" 
                   class="theme-btn" 
-                  :class="{ active: userPreferences.theme === 'dark' }"
+                  :class="{ active: userPreferences.theme === 'light-gold' }"
                 >
-                  <span class="theme-icon">🌙</span>
-                  <span>Dark</span>
+                  <span class="theme-icon">✨</span>
+                  <span>Light Gold</span>
                 </button>
                 <button 
-                  @click="setTheme('system')" 
+                  @click="setTheme('professional-blue')" 
                   class="theme-btn" 
-                  :class="{ active: userPreferences.theme === 'system' }"
+                  :class="{ active: userPreferences.theme === 'professional-blue' }"
                 >
-                  <span class="theme-icon">💻</span>
-                  <span>System</span>
+                  <span class="theme-icon">🔷</span>
+                  <span>Professional Blue</span>
+                </button>
+                <button 
+                  @click="setTheme('elegant-purple')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'elegant-purple' }"
+                >
+                  <span class="theme-icon">💜</span>
+                  <span>Elegant Purple</span>
                 </button>
               </div>
             </div>
@@ -427,7 +435,7 @@ const userProfile = ref({
 
 // User preferences
 const userPreferences = ref({
-  theme: preferencesStore.theme || 'system',
+  theme: preferencesStore.theme || 'dark-default',
   defaultTaskFilter: preferencesStore.taskFilter || 'all',
   defaultTaskSort: preferencesStore.taskSort || 'date-desc'
 });
@@ -655,12 +663,6 @@ const setTheme = (theme) => {
   userPreferences.value.theme = theme;
   preferencesStore.setTheme(theme);
   savePreferences();
-  
-  // Apply theme
-  document.documentElement.setAttribute('data-theme', theme === 'system' 
-    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : theme
-  );
 };
 
 // Save preferences
@@ -1104,8 +1106,10 @@ textarea:focus ~ .input-focus-effect {
 }
 
 .theme-options {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .theme-btn {
@@ -1115,25 +1119,86 @@ textarea:focus ~ .input-focus-effect {
   padding: 1rem;
   border-radius: 8px;
   border: 2px solid var(--color-border);
-  background-color: var(--color-bg-tertiary);
   cursor: pointer;
   transition: all 0.3s;
-  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+/* Theme preview backgrounds */
+.theme-btn:nth-child(1)::before {
+  background: linear-gradient(135deg, #121212 0%, #2a2a2a 100%);
+}
+
+.theme-btn:nth-child(2)::before {
+  background: linear-gradient(135deg, #f8f8f8 0%, #ffd700 100%);
+}
+
+.theme-btn:nth-child(3)::before {
+  background: linear-gradient(135deg, #1a2733 0%, #0078d7 100%);
+}
+
+.theme-btn:nth-child(4)::before {
+  background: linear-gradient(135deg, #2d1b3a 0%, #9c27b0 100%);
 }
 
 .theme-btn.active {
   border-color: var(--color-accent-primary);
-  background-color: rgba(138, 43, 226, 0.1);
+  box-shadow: 0 0 15px var(--color-accent-primary);
+}
+
+.theme-btn.active::before {
+  opacity: 1;
 }
 
 .theme-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.theme-btn:hover::before {
+  opacity: 0.9;
 }
 
 .theme-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  z-index: 1;
+}
+
+.theme-btn span:not(.theme-icon) {
+  font-weight: 500;
+  z-index: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Theme-specific text colors */
+.theme-btn:nth-child(1) span {
+  color: var(--color-silver-highlight);
+}
+
+.theme-btn:nth-child(2) span {
+  color: #333333;
+}
+
+.theme-btn:nth-child(3) span {
+  color: #f0f0f0;
+}
+
+.theme-btn:nth-child(4) span {
+  color: #f5f5f5;
 }
 
 /* Stats Card */
@@ -1453,7 +1518,7 @@ textarea:focus ~ .input-focus-effect {
   }
   
   .theme-options {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
   
   .account-actions {
@@ -1462,6 +1527,31 @@ textarea:focus ~ .input-focus-effect {
   
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .theme-btn {
+    padding: 0.75rem;
+  }
+  
+  .theme-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .theme-btn span:not(.theme-icon) {
+    font-size: 0.9rem;
+  }
+  
+  .profile-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-btn {
+    flex: 1 0 auto;
+    padding: 0.5rem;
+    font-size: 0.9rem;
   }
 }
 </style>

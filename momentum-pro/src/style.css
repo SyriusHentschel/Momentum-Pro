@@ -1,18 +1,46 @@
+/* Base colors that are shared across themes */
 :root {
-  /* Futuristic Color Palette */
+  /* Common colors */
   --color-black: #121212;
+  --color-white: #ffffff;
+  --color-red: #ff3860;
+  --color-red-dark: #d32f2f;
+  --color-green: #23d160;
+  --color-green-dark: #1ca64c;
+  
+  /* Common gold colors */
+  --color-gold: #ffd700;
+  --color-gold-dark: #d4af37;
+  
+  /* Common purple colors */
+  --color-purple: #8a2be2;
+  --color-purple-dark: #6a1fb2;
+  
+  /* Common blue colors */
+  --color-blue: #0078d7;
+  --color-blue-dark: #005a9e;
+  
+  /* Common gray colors */
   --color-dark-gray: #1e1e1e;
   --color-gray: #2a2a2a;
   --color-light-gray: #3a3a3a;
   --color-silver: #c0c0c0;
   --color-silver-highlight: #e0e0e0;
-  --color-gold: #ffd700;
-  --color-gold-dark: #d4af37;
-  --color-purple: #8a2be2;
-  --color-purple-dark: #6a1fb2;
-  --color-red: #ff3860;
-  --color-red-dark: #d32f2f;
   
+  /* Typography */
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  
+  /* Base styling */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Default Dark Theme (Original) */
+[data-theme="dark-default"] {
   /* Accent colors */
   --color-accent-primary: var(--color-purple);
   --color-accent-secondary: var(--color-gold);
@@ -28,28 +56,127 @@
   --color-bg-secondary: var(--color-dark-gray);
   --color-bg-tertiary: var(--color-gray);
   --color-bg-card: var(--color-light-gray);
+  --color-bg-light: #444444;
+  
+  /* Border colors */
+  --color-border: #444444;
   
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-  --shadow-glow-purple: 0 0 10px rgba(138, 43, 226, 0.4);
-  --shadow-glow-gold: 0 0 10px rgba(255, 215, 0, 0.4);
-  
-  /* Typography */
-  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  font-weight: 400;
+  --shadow-glow-primary: 0 0 10px rgba(138, 43, 226, 0.4);
+  --shadow-glow-secondary: 0 0 10px rgba(255, 215, 0, 0.4);
   
   /* Base styling */
   color-scheme: dark;
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
+}
+
+/* Light Theme with Gold Accents */
+[data-theme="light-gold"] {
+  /* Accent colors */
+  --color-accent-primary: var(--color-gold-dark);
+  --color-accent-secondary: #b8860b; /* Dark goldenrod */
+  --color-accent-danger: var(--color-red-dark);
   
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Text colors */
+  --color-text-primary: #333333;
+  --color-text-secondary: #555555;
+  --color-text-muted: #777777;
+  
+  /* Background colors */
+  --color-bg-primary: #f8f8f8;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f0f0f0;
+  --color-bg-card: #ffffff;
+  --color-bg-light: #e8e8e8;
+  
+  /* Border colors */
+  --color-border: #dddddd;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-glow-primary: 0 0 10px rgba(212, 175, 55, 0.3);
+  --shadow-glow-secondary: 0 0 10px rgba(184, 134, 11, 0.3);
+  
+  /* Base styling */
+  color-scheme: light;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+}
+
+/* Professional Blue Theme */
+[data-theme="professional-blue"] {
+  /* Accent colors */
+  --color-accent-primary: var(--color-blue);
+  --color-accent-secondary: #4dabf5; /* Lighter blue */
+  --color-accent-danger: var(--color-red);
+  
+  /* Text colors */
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #d0d0d0;
+  --color-text-muted: #a0a0a0;
+  
+  /* Background colors */
+  --color-bg-primary: #1a2733; /* Dark navy */
+  --color-bg-secondary: #233240; /* Navy */
+  --color-bg-tertiary: #2c3e50; /* Darker blue */
+  --color-bg-card: #34495e; /* Dark blue */
+  --color-bg-light: #3d566e; /* Lighter blue */
+  
+  /* Border colors */
+  --color-border: #3d566e;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-glow-primary: 0 0 10px rgba(0, 120, 215, 0.4);
+  --shadow-glow-secondary: 0 0 10px rgba(77, 171, 245, 0.4);
+  
+  /* Base styling */
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+}
+
+/* Elegant Purple Theme */
+[data-theme="elegant-purple"] {
+  /* Accent colors */
+  --color-accent-primary: #9c27b0; /* Purple */
+  --color-accent-secondary: #e1bee7; /* Light purple */
+  --color-accent-danger: var(--color-red);
+  
+  /* Text colors */
+  --color-text-primary: #f5f5f5;
+  --color-text-secondary: #e0e0e0;
+  --color-text-muted: #bbbbbb;
+  
+  /* Background colors */
+  --color-bg-primary: #2d1b3a; /* Dark purple */
+  --color-bg-secondary: #3a224a; /* Medium dark purple */
+  --color-bg-tertiary: #4a2c5d; /* Medium purple */
+  --color-bg-card: #5d3a76; /* Light purple */
+  --color-bg-light: #6e4589; /* Lighter purple */
+  
+  /* Border colors */
+  --color-border: #6e4589;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-glow-primary: 0 0 10px rgba(156, 39, 176, 0.4);
+  --shadow-glow-secondary: 0 0 10px rgba(225, 190, 231, 0.4);
+  
+  /* Base styling */
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
 }
 
 /* Form elements */
@@ -78,7 +205,7 @@ a {
 
 a:hover {
   color: var(--color-accent-secondary);
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  text-shadow: var(--shadow-glow-secondary);
 }
 
 /* Body */
@@ -135,7 +262,7 @@ button {
 
 button:hover {
   background-color: var(--color-light-gray);
-  box-shadow: var(--shadow-glow-purple);
+  box-shadow: var(--shadow-glow-primary);
 }
 
 button:focus,

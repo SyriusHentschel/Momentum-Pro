@@ -5,7 +5,7 @@ export const usePreferencesStore = defineStore('preferences', {
   state: () => ({
     taskFilter: 'all', // 'all', 'complete', 'incomplete'
     taskSort: 'date-desc', // 'date-desc', 'date-asc', 'importance', 'alphabetical'
-    theme: 'system', // 'light', 'dark', 'system'
+    theme: 'dark-default', // 'dark-default', 'light-gold', 'professional-blue', 'elegant-purple'
   }),
   
   actions: {
@@ -23,34 +23,20 @@ export const usePreferencesStore = defineStore('preferences', {
     },
     
     applyTheme() {
-      let themeToApply = this.theme;
-      
-      // If system preference, check user's OS preference
-      if (themeToApply === 'system') {
-        themeToApply = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      }
-      
       // Apply theme to document
-      document.documentElement.setAttribute('data-theme', themeToApply);
+      document.documentElement.setAttribute('data-theme', this.theme);
     },
     
     resetPreferences() {
       this.taskFilter = 'all';
       this.taskSort = 'date-desc';
-      this.theme = 'system';
+      this.theme = 'dark-default';
       this.applyTheme();
     },
     
     // Initialize theme on app start
     initTheme() {
       this.applyTheme();
-      
-      // Listen for system preference changes if using system theme
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (this.theme === 'system') {
-          document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-        }
-      });
     }
   },
   
