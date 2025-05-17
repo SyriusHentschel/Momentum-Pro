@@ -516,7 +516,6 @@ const onDragChange = async (column, event) => {
     let isComplete = column === 'done';
     
     await taskStore.updateTask(task.id, { 
-      status: newStatus,
       is_complete: isComplete 
     });
   }
@@ -604,7 +603,6 @@ const saveTaskEdit = async () => {
     title: editTaskForm.value.title.trim(),
     description: editTaskForm.value.description.trim(),
     importance: editTaskForm.value.importance,
-    status: editTaskForm.value.status,
     is_complete: editTaskForm.value.status === 'done'
   };
   
@@ -742,7 +740,8 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-=======
+}
+
 .filter-controls select {
   padding: 0.5rem;
   border-radius: 4px;
@@ -774,12 +773,10 @@ onMounted(async () => {
   padding: 1rem;
   background-color: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .column-header h3 {
   margin: 0;
-<<<<<<< HEAD
   font-size: 1.2rem;
 }
 
@@ -885,8 +882,6 @@ onMounted(async () => {
 
 .kanban-task.importance-low {
   border-left-color: #3498db;
-=======
-  font-size: 1.1rem;
 }
 
 .task-count {
@@ -973,7 +968,6 @@ onMounted(async () => {
 .kanban-task.completed-task h4 {
   text-decoration: line-through;
   color: var(--color-text-muted);
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .task-header {
@@ -990,7 +984,6 @@ onMounted(async () => {
   flex: 1;
 }
 
-<<<<<<< HEAD
 .importance-badge {
   font-size: 0.7rem;
   padding: 0.2rem 0.4rem;
@@ -1026,34 +1019,21 @@ onMounted(async () => {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.5rem;
-=======
-.task-actions {
-  display: flex;
-  gap: 0.25rem;
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .task-actions button {
   background: none;
   border: none;
   cursor: pointer;
-<<<<<<< HEAD
   padding: 0.2rem;
   border-radius: 4px;
   transition: background-color 0.2s;
-=======
-  padding: 0.25rem;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  font-size: 0.8rem;
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .task-actions button:hover {
   background-color: var(--color-bg-tertiary);
 }
 
-<<<<<<< HEAD
 .edit-btn .icon {
   font-size: 1rem;
 }
@@ -1063,7 +1043,7 @@ onMounted(async () => {
 }
 
 /* Modal styles */
-=======
+
 .task-description {
   margin: 0.5rem 0;
   font-size: 0.9rem;
@@ -1136,7 +1116,6 @@ onMounted(async () => {
 }
 
 /* Modal styling */
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1145,7 +1124,6 @@ onMounted(async () => {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-<<<<<<< HEAD
   justify-content: center;
   align-items: center;
   z-index: 1000;
@@ -1226,10 +1204,6 @@ onMounted(async () => {
 
 .label-icon {
   font-size: 1.2rem;
-=======
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
 }
 
 .modal-content {
@@ -1300,13 +1274,11 @@ onMounted(async () => {
   border: 1px solid var(--color-border);
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-<<<<<<< HEAD
   gap: 1rem;
   margin-top: 1.5rem;
 }
@@ -1329,10 +1301,6 @@ onMounted(async () => {
 .save-btn:disabled {
   background-color: var(--color-light-gray);
   cursor: not-allowed;
-=======
-  gap: 0.5rem;
-  padding: 1rem;
-  border-top: 1px solid var(--color-border);
 }
 
 .modal-actions button {
@@ -1371,14 +1339,12 @@ onMounted(async () => {
 
 .confirm-btn:hover {
   background-color: var(--color-red-dark);
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .cancel-btn {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
-<<<<<<< HEAD
   padding: 0.6rem 1.2rem;
   border-radius: 4px;
   cursor: pointer;
@@ -1388,11 +1354,6 @@ onMounted(async () => {
 
 .cancel-btn:hover {
   background-color: var(--color-bg-secondary);
-=======
-}
-
-.cancel-btn:hover {
-  background-color: var(--color-bg-card);
 }
 
 .save-btn {
@@ -1497,6 +1458,5 @@ onMounted(async () => {
   .column-content {
     max-height: 350px;
   }
->>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 </style>

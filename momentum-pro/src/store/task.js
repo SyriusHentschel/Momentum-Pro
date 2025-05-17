@@ -139,8 +139,7 @@ export const useTaskStore = defineStore("tasks", {
               description, 
               user_id, 
               is_complete: status === 'done',
-              importance,
-              status
+              importance
             }
           ]);
         
@@ -196,10 +195,8 @@ export const useTaskStore = defineStore("tasks", {
     },
     
     async toggleTaskCompletion(id, currentStatus) {
-      const status = !currentStatus ? 'done' : 'todo';
       return this.updateTask(id, { 
-        is_complete: !currentStatus,
-        status
+        is_complete: !currentStatus
       });
     },
     
