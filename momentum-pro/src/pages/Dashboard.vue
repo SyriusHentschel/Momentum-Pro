@@ -15,7 +15,19 @@
     </header>
     
     <main class="dashboard-content">
-      <h2>Welcome, {{ userDisplayName }}</h2>
+      <div class="dashboard-top-bar">
+        <h2>Welcome, {{ userDisplayName }}</h2>
+        <div class="view-toggle">
+          <router-link to="/" class="view-btn active">
+            <span class="view-icon">📋</span>
+            <span class="btn-text">List View</span>
+          </router-link>
+          <router-link to="/kanban" class="view-btn">
+            <span class="view-icon">📊</span>
+            <span class="btn-text">Kanban View</span>
+          </router-link>
+        </div>
+      </div>
       
       <!-- Old notification area removed - now using toast notifications -->
       
@@ -169,6 +181,18 @@
                 </select>
               </div>
               
+              <div class="form-row">
+                <label>
+                  <span class="label-icon">📋</span>
+                  Status:
+                </label>
+                <select v-model="editTaskForm.status" class="status-select">
+                  <option value="todo">To Do</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+              
               <div class="edit-actions">
                 <button @click="saveTaskEdit(task.id)" class="save-btn" :disabled="!editTaskForm.title.trim()">
                   <span class="btn-text">Save</span>
@@ -273,7 +297,8 @@ const editingTaskId = ref(null);
 const editTaskForm = ref({
   title: '',
   description: '',
-  importance: 'medium'
+  importance: 'medium',
+  status: 'todo'
 });
 
 // Delete confirmation state
@@ -403,7 +428,8 @@ const startEditTask = (task) => {
   editTaskForm.value = {
     title: task.title,
     description: task.description || '',
-    importance: task.importance || 'medium'
+    importance: task.importance || 'medium',
+    status: task.status || (task.is_complete ? 'done' : 'todo')
   };
 };
 
@@ -412,10 +438,13 @@ const saveTaskEdit = async (taskId) => {
   if (!editTaskForm.value.title.trim()) return;
   
   try {
+    const status = editTaskForm.value.status || 'todo';
     await taskStore.updateTask(taskId, {
       title: editTaskForm.value.title.trim(),
       description: editTaskForm.value.description.trim(),
-      importance: editTaskForm.value.importance
+      importance: editTaskForm.value.importance,
+      status: status,
+      is_complete: status === 'done'
     });
     
     // Exit edit mode
@@ -518,6 +547,66 @@ const formatDate = (dateString) => {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-fill-color: transparent;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  background-color: var(--color-bg-tertiary);
+  padding: 0.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.view-btn:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.view-btn.active {
+  background-color: var(--color-accent-primary);
+  color: white;
+}
+
+.view-icon {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .dashboard-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .view-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.dashboard-header h1 {
   text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
   position: relative;
   animation: titleGlow 3s infinite alternate;
@@ -533,9 +622,18 @@ const formatDate = (dateString) => {
   }
 }
 
+.dashboard-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
 .dashboard-content h2 {
   animation: fadeIn 1s ease-out;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   position: relative;
   display: inline-block;
   transition: all 0.3s ease;
@@ -930,7 +1028,7 @@ h3::before {
   font-weight: 500;
 }
 
-.importance-select {
+.importance-select, .status-select {
   padding: 0.6rem 0.8rem;
   min-width: 140px;
   background-color: var(--color-bg-tertiary);
@@ -948,13 +1046,13 @@ h3::before {
   padding-right: 2.5rem;
 }
 
-.importance-select:hover {
+.importance-select:hover, .status-select:hover {
   border-color: var(--color-accent-primary);
   box-shadow: 0 3px 8px rgba(138, 43, 226, 0.15);
   transform: translateY(-2px);
 }
 
-.importance-select:focus {
+.importance-select:focus, .status-select:focus {
   border-color: var(--color-accent-primary);
   box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2), 0 3px 8px rgba(0, 0, 0, 0.1);
   outline: none;

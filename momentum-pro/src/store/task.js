@@ -12,6 +12,7 @@ let devModeTasks = [
     user_id: "dev-user-123",
     is_complete: false,
     importance: "medium",
+    status: "todo",
     created_at: new Date().toISOString()
   },
   {
@@ -21,6 +22,17 @@ let devModeTasks = [
     user_id: "dev-user-123",
     is_complete: true,
     importance: "low",
+    status: "done",
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 3,
+    title: "Sample Task 3",
+    description: "A task that is in progress",
+    user_id: "dev-user-123",
+    is_complete: false,
+    importance: "high",
+    status: "in-progress",
     created_at: new Date().toISOString()
   }
 ];
@@ -93,7 +105,7 @@ export const useTaskStore = defineStore("tasks", {
       }
     },
     
-    async createTask(title, description, user_id, importance = 'medium') {
+    async createTask(title, description, user_id, importance = 'medium', status = 'todo') {
       this.setLoading(true);
       this.error = null;
       
@@ -106,8 +118,9 @@ export const useTaskStore = defineStore("tasks", {
             title,
             description,
             user_id,
-            is_complete: false,
+            is_complete: status === 'done',
             importance,
+            status,
             created_at: new Date().toISOString()
           };
           
@@ -125,8 +138,9 @@ export const useTaskStore = defineStore("tasks", {
               title, 
               description, 
               user_id, 
-              is_complete: false,
-              importance
+              is_complete: status === 'done',
+              importance,
+              status
             }
           ]);
         
@@ -182,7 +196,11 @@ export const useTaskStore = defineStore("tasks", {
     },
     
     async toggleTaskCompletion(id, currentStatus) {
-      return this.updateTask(id, { is_complete: !currentStatus });
+      const status = !currentStatus ? 'done' : 'todo';
+      return this.updateTask(id, { 
+        is_complete: !currentStatus,
+        status
+      });
     },
     
     async updateTaskImportance(id, importance) {
