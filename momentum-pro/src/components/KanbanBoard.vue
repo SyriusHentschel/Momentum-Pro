@@ -419,7 +419,6 @@
         </div>
       </div>
     </div>
-
     <!-- Delete Confirmation Modal -->
     <div v-if="showDeleteConfirm" class="modal-overlay">
       <div class="modal-content">
@@ -639,6 +638,28 @@ const cancelDelete = () => {
   taskToDeleteId.value = null;
 };
 
+// Format date for display
+const formatDate = (dateString, includeTime = false) => {
+  if (!dateString) return 'Unknown';
+  
+  const date = new Date(dateString);
+  
+  if (includeTime) {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+  
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
 onMounted(async () => {
   // Fetch tasks if not already loaded
   if (!tasks.value || tasks.value.length === 0) {
@@ -674,6 +695,7 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
+<<<<<<< HEAD
 .swimlane-selector label {
   font-size: 0.9rem;
   color: var(--color-text-secondary);
@@ -720,10 +742,44 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+=======
+.filter-controls select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  height: calc(100vh - 250px);
+  min-height: 500px;
+}
+
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-tertiary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .column-header h3 {
   margin: 0;
+<<<<<<< HEAD
   font-size: 1.2rem;
 }
 
@@ -829,6 +885,95 @@ onMounted(async () => {
 
 .kanban-task.importance-low {
   border-left-color: #3498db;
+=======
+  font-size: 1.1rem;
+}
+
+.task-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.8rem;
+}
+
+.column-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* Custom scrollbar for column content */
+.column-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.column-content::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+}
+
+.column-content::-webkit-scrollbar-thumb {
+  background-color: var(--color-bg-card);
+  border-radius: 3px;
+}
+
+.empty-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  border: 2px dashed var(--color-border);
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+
+/* Column-specific styling */
+.todo-column .column-header {
+  border-top: 3px solid var(--color-accent-primary);
+}
+
+.progress-column .column-header {
+  border-top: 3px solid var(--color-gold);
+}
+
+.done-column .column-header {
+  border-top: 3px solid var(--color-green);
+}
+
+/* Task cards */
+.kanban-task {
+  background-color: var(--color-bg-card);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.kanban-task:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.kanban-task.is-dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+  box-shadow: var(--shadow-lg);
+}
+
+.kanban-task.completed-task h4 {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .task-header {
@@ -845,6 +990,7 @@ onMounted(async () => {
   flex: 1;
 }
 
+<<<<<<< HEAD
 .importance-badge {
   font-size: 0.7rem;
   padding: 0.2rem 0.4rem;
@@ -880,21 +1026,34 @@ onMounted(async () => {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.5rem;
+=======
+.task-actions {
+  display: flex;
+  gap: 0.25rem;
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .task-actions button {
   background: none;
   border: none;
   cursor: pointer;
+<<<<<<< HEAD
   padding: 0.2rem;
   border-radius: 4px;
   transition: background-color 0.2s;
+=======
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  font-size: 0.8rem;
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .task-actions button:hover {
   background-color: var(--color-bg-tertiary);
 }
 
+<<<<<<< HEAD
 .edit-btn .icon {
   font-size: 1rem;
 }
@@ -904,6 +1063,80 @@ onMounted(async () => {
 }
 
 /* Modal styles */
+=======
+.task-description {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  word-break: break-word;
+}
+
+.task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.task-date {
+  color: var(--color-text-muted);
+}
+
+/* Importance styling */
+.importance-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.importance-high {
+  border-left: 3px solid var(--color-red);
+}
+
+.importance-high .importance-badge {
+  background-color: rgba(255, 56, 96, 0.1);
+  color: var(--color-red);
+}
+
+.importance-medium {
+  border-left: 3px solid var(--color-gold);
+}
+
+.importance-medium .importance-badge {
+  background-color: rgba(255, 215, 0, 0.1);
+  color: var(--color-gold-dark);
+}
+
+.importance-low {
+  border-left: 3px solid var(--color-green);
+}
+
+.importance-low .importance-badge {
+  background-color: rgba(35, 209, 96, 0.1);
+  color: var(--color-green);
+}
+
+/* Completion indicator */
+.completion-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: var(--color-green);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Modal styling */
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -912,6 +1145,7 @@ onMounted(async () => {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
+<<<<<<< HEAD
   justify-content: center;
   align-items: center;
   z-index: 1000;
@@ -992,11 +1226,87 @@ onMounted(async () => {
 
 .label-icon {
   font-size: 1.2rem;
+=======
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.task-details {
+  padding: 1rem;
+}
+
+.detail-group {
+  margin-bottom: 1rem;
+}
+
+.detail-group h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.detail-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-secondary);
+}
+
+.detail-group p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.detail-group select {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
+<<<<<<< HEAD
   gap: 1rem;
   margin-top: 1.5rem;
 }
@@ -1019,12 +1329,56 @@ onMounted(async () => {
 .save-btn:disabled {
   background-color: var(--color-light-gray);
   cursor: not-allowed;
+=======
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.modal-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn {
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+}
+
+.edit-btn:hover {
+  background-color: var(--color-purple-dark);
+}
+
+.delete-btn {
+  background-color: var(--color-red);
+  color: white;
+  border: none;
+}
+
+.delete-btn:hover {
+  background-color: var(--color-red-dark);
+}
+
+.confirm-btn {
+  background-color: var(--color-red);
+  color: white;
+  border: none;
+}
+
+.confirm-btn:hover {
+  background-color: var(--color-red-dark);
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 
 .cancel-btn {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
+<<<<<<< HEAD
   padding: 0.6rem 1.2rem;
   border-radius: 4px;
   cursor: pointer;
@@ -1034,5 +1388,115 @@ onMounted(async () => {
 
 .cancel-btn:hover {
   background-color: var(--color-bg-secondary);
+=======
+}
+
+.cancel-btn:hover {
+  background-color: var(--color-bg-card);
+}
+
+.save-btn {
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+}
+
+.save-btn:hover:not(:disabled) {
+  background-color: var(--color-purple-dark);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Edit form styling */
+.edit-form {
+  padding: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper input,
+.input-wrapper textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.input-wrapper input:focus,
+.input-wrapper textarea:focus {
+  border-color: var(--color-accent-primary);
+  outline: none;
+}
+
+.input-wrapper textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.char-counter {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.char-counter.near-limit {
+  color: var(--color-red);
+}
+
+.input-focus-effect {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-accent-primary);
+  transition: width 0.3s;
+}
+
+.input-wrapper input:focus ~ .input-focus-effect,
+.input-wrapper textarea:focus ~ .input-focus-effect {
+  width: 100%;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .kanban-column {
+    margin-bottom: 1rem;
+    height: auto;
+    max-height: 400px;
+  }
+  
+  .column-content {
+    max-height: 350px;
+  }
+>>>>>>> 4bde85d6f845d7855e0d33b9f49f6af4dadb0f34
 }
 </style>
