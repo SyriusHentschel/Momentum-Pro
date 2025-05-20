@@ -17,10 +17,21 @@
       <!-- To Do Column -->
       <div class="kanban-column todo-column">
         <div class="column-header">
-          <h3>To Do</h3>
+          <div class="header-title">
+            <button @click="toggleColumn('todo')" class="collapse-btn">
+              <span class="collapse-icon" :class="{ 'collapsed': collapsedColumns.todo }">▼</span>
+            </button>
+            <h3>To Do</h3>
+          </div>
           <span class="task-count">{{ todoTasks.length }}</span>
         </div>
+        <div class="column-actions">
+          <button @click="createNewTask('todo')" class="add-task-btn">
+            <span class="icon">+</span> Add Task
+          </button>
+        </div>
         
+        <div v-if="!collapsedColumns.todo" class="column-content">
         <!-- No Swimlanes -->
         <div v-if="swimlaneType === 'none'" class="swimlane">
           <draggable 
@@ -65,7 +76,7 @@
               :list="getTasksByImportance(todoTasks, importance.value)"
               group="tasks"
               item-key="id"
-              @change="onDragChange('todo')"
+              @change="(event) => onDragChange('todo', event)"
               :animation="200"
             >
               <template #item="{ element }">
@@ -100,7 +111,7 @@
               :list="getTasksByDateRange(todoTasks, dateRange.value)"
               group="tasks"
               item-key="id"
-              @change="onDragChange('todo')"
+              @change="(event) => onDragChange('todo', event)"
               :animation="200"
             >
               <template #item="{ element }">
@@ -126,14 +137,26 @@
           </div>
         </div>
       </div>
+      </div>
 
       <!-- In Progress Column -->
       <div class="kanban-column in-progress-column">
         <div class="column-header">
-          <h3>In Progress</h3>
+          <div class="header-title">
+            <button @click="toggleColumn('in-progress')" class="collapse-btn">
+              <span class="collapse-icon" :class="{ 'collapsed': collapsedColumns['in-progress'] }">▼</span>
+            </button>
+            <h3>In Progress</h3>
+          </div>
           <span class="task-count">{{ inProgressTasks.length }}</span>
         </div>
+        <div class="column-actions">
+          <button @click="createNewTask('in-progress')" class="add-task-btn">
+            <span class="icon">+</span> Add Task
+          </button>
+        </div>
         
+        <div v-if="!collapsedColumns['in-progress']" class="column-content">
         <!-- No Swimlanes -->
         <div v-if="swimlaneType === 'none'" class="swimlane">
           <draggable 
@@ -141,7 +164,7 @@
             :list="inProgressTasks"
             group="tasks"
             item-key="id"
-            @change="onDragChange('in-progress')"
+            @change="(event) => onDragChange('in-progress', event)"
             :animation="200"
           >
             <template #item="{ element }">
@@ -178,7 +201,7 @@
               :list="getTasksByImportance(inProgressTasks, importance.value)"
               group="tasks"
               item-key="id"
-              @change="onDragChange('in-progress')"
+              @change="(event) => onDragChange('in-progress', event)"
               :animation="200"
             >
               <template #item="{ element }">
@@ -213,7 +236,7 @@
               :list="getTasksByDateRange(inProgressTasks, dateRange.value)"
               group="tasks"
               item-key="id"
-              @change="onDragChange('in-progress')"
+              @change="(event) => onDragChange('in-progress', event)"
               :animation="200"
             >
               <template #item="{ element }">
@@ -239,14 +262,26 @@
           </div>
         </div>
       </div>
+      </div>
 
       <!-- Done Column -->
       <div class="kanban-column done-column">
         <div class="column-header">
-          <h3>Done</h3>
+          <div class="header-title">
+            <button @click="toggleColumn('done')" class="collapse-btn">
+              <span class="collapse-icon" :class="{ 'collapsed': collapsedColumns.done }">▼</span>
+            </button>
+            <h3>Done</h3>
+          </div>
           <span class="task-count">{{ doneTasks.length }}</span>
         </div>
+        <div class="column-actions">
+          <button @click="createNewTask('done')" class="add-task-btn">
+            <span class="icon">+</span> Add Task
+          </button>
+        </div>
         
+        <div v-if="!collapsedColumns.done" class="column-content">
         <!-- No Swimlanes -->
         <div v-if="swimlaneType === 'none'" class="swimlane">
           <draggable 
@@ -254,7 +289,7 @@
             :list="doneTasks"
             group="tasks"
             item-key="id"
-            @change="onDragChange('done')"
+            @change="(event) => onDragChange('done', event)"
             :animation="200"
           >
             <template #item="{ element }">
@@ -291,7 +326,7 @@
               :list="getTasksByImportance(doneTasks, importance.value)"
               group="tasks"
               item-key="id"
-              @change="onDragChange('done')"
+              @change="(event) => onDragChange('done', event)"
               :animation="200"
             >
               <template #item="{ element }">
@@ -326,7 +361,7 @@
               :list="getTasksByDateRange(doneTasks, dateRange.value)"
               group="tasks"
               item-key="id"
-              @change="onDragChange('done')"
+              @change="(event) => onDragChange('done', event)"
               :animation="200"
             >
               <template #item="{ element }">
@@ -351,6 +386,7 @@
             </draggable>
           </div>
         </div>
+      </div>
       </div>
     </div>
 
@@ -449,6 +485,13 @@ const todoTasks = ref([]);
 const inProgressTasks = ref([]);
 const doneTasks = ref([]);
 
+// Column collapse state
+const collapsedColumns = ref({
+  todo: false,
+  'in-progress': false,
+  done: false
+});
+
 // Swimlane configuration
 const swimlaneType = ref(localStorage.getItem('kanban_swimlane') || 'none');
 
@@ -516,8 +559,11 @@ const onDragChange = async (column, event) => {
     let isComplete = column === 'done';
     
     await taskStore.updateTask(task.id, { 
-      is_complete: isComplete 
+      is_complete: isComplete,
+      status: newStatus
     });
+    
+    console.log(`Task moved to ${column} column:`, task.title);
   }
   
   // Handle moved items (reordering within the same column)
@@ -595,24 +641,57 @@ const editTask = (task) => {
   showEditModal.value = true;
 };
 
-// Save task edit
+// Save task edit or create new task
 const saveTaskEdit = async () => {
   if (!editTaskForm.value.title.trim()) return;
   
-  const updates = {
+  const taskData = {
     title: editTaskForm.value.title.trim(),
     description: editTaskForm.value.description.trim(),
     importance: editTaskForm.value.importance,
     is_complete: editTaskForm.value.status === 'done'
   };
   
-  await taskStore.updateTask(editTaskForm.value.id, updates);
+  if (editTaskForm.value.id) {
+    // Update existing task
+    await taskStore.updateTask(editTaskForm.value.id, taskData);
+  } else {
+    // Create new task
+    // Use a valid UUID for anonymous users or get from localStorage
+    const userId = localStorage.getItem('user_id') || localStorage.getItem('dev_mode_user') || '00000000-0000-0000-0000-000000000000';
+    
+    // Enable dev mode if no valid user ID is found
+    if (!localStorage.getItem('user_id') && !localStorage.getItem('dev_mode_user')) {
+      localStorage.setItem('dev_mode_user', 'dev-user-123');
+    }
+    
+    await taskStore.createTask(
+      taskData.title,
+      taskData.description,
+      userId,
+      taskData.importance,
+      editTaskForm.value.status
+    );
+  }
+  
   showEditModal.value = false;
 };
 
 // Cancel edit
 const cancelEdit = () => {
   showEditModal.value = false;
+};
+
+// Create new task in a specific column
+const createNewTask = (status) => {
+  editTaskForm.value = {
+    id: null,
+    title: '',
+    description: '',
+    importance: 'medium',
+    status: status
+  };
+  showEditModal.value = true;
 };
 
 // Delete task
@@ -634,6 +713,11 @@ const confirmDelete = async () => {
 const cancelDelete = () => {
   showDeleteConfirm.value = false;
   taskToDeleteId.value = null;
+};
+
+// Toggle column collapse
+const toggleColumn = (column) => {
+  collapsedColumns.value[column] = !collapsedColumns.value[column];
 };
 
 // Format date for display
@@ -659,6 +743,12 @@ const formatDate = (dateString, includeTime = false) => {
 };
 
 onMounted(async () => {
+  // Enable development mode by default if no user is logged in
+  if (!localStorage.getItem('user_id') && !localStorage.getItem('dev_mode_user')) {
+    console.log('Enabling development mode for testing');
+    localStorage.setItem('dev_mode_user', 'dev-user-123');
+  }
+  
   // Fetch tasks if not already loaded
   if (!tasks.value || tasks.value.length === 0) {
     await taskStore.fetchTasks();
@@ -1457,6 +1547,115 @@ onMounted(async () => {
   
   .column-content {
     max-height: 350px;
+  }
+  
+  .column-actions {
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--color-border);
+  }
+  
+  .add-task-btn {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px dashed var(--color-border);
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .add-task-btn:hover {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-primary);
+  }
+  
+  .add-task-btn .icon {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+  }
+  
+  /* Column header styling */
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .collapse-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .collapse-icon {
+    transition: transform 0.2s ease;
+    font-size: 0.8rem;
+  }
+  
+  .collapse-icon.collapsed {
+    transform: rotate(-90deg);
+  }
+  
+  .column-content {
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+  }
+  
+  /* Enhanced importance badges */
+  .importance-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+  }
+  
+  .importance-badge::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+  
+  .importance-high {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+  }
+  
+  .importance-high::before {
+    background-color: #e74c3c;
+  }
+  
+  .importance-medium {
+    background-color: rgba(243, 156, 18, 0.1);
+    color: #f39c12;
+  }
+  
+  .importance-medium::before {
+    background-color: #f39c12;
+  }
+  
+  .importance-low {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+  }
+  
+  .importance-low::before {
+    background-color: #2ecc71;
   }
 }
 </style>

@@ -139,7 +139,8 @@ export const useTaskStore = defineStore("tasks", {
               description, 
               user_id, 
               is_complete: status === 'done',
-              importance
+              importance,
+              status
             }
           ]);
         
