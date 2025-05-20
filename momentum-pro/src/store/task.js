@@ -3,8 +3,8 @@ import { defineStore } from "pinia";
 import { supabase } from "../supabase";
 import { useToastStore } from "./toast";
 
-// For development mode
-let devModeTasks = [
+// Default tasks for development mode
+const defaultDevTasks = [
   {
     id: 1,
     title: "Sample Task 1",
@@ -36,6 +36,20 @@ let devModeTasks = [
     created_at: new Date().toISOString()
   }
 ];
+
+// Load tasks from localStorage or use defaults
+const loadDevModeTasks = () => {
+  try {
+    const savedTasks = localStorage.getItem('dev_mode_tasks');
+    return savedTasks ? JSON.parse(savedTasks) : [...defaultDevTasks];
+  } catch (error) {
+    console.error('Error loading dev tasks from localStorage:', error);
+    return [...defaultDevTasks];
+  }
+};
+
+// Initialize dev mode tasks
+let devModeTasks = loadDevModeTasks();
 
 export const useTaskStore = defineStore("tasks", {
   state: () => ({
@@ -76,6 +90,14 @@ export const useTaskStore = defineStore("tasks", {
       }, 5000);
     },
     
+    // Save dev mode tasks to localStorage
+    saveDevModeTasks() {
+      if (localStorage.getItem('dev_mode_user')) {
+        localStorage.setItem('dev_mode_tasks', JSON.stringify(devModeTasks));
+        console.log('Saved dev mode tasks to localStorage');
+      }
+    },
+    
     async fetchTasks() {
       this.setLoading(true);
       this.error = null;
@@ -84,18 +106,45 @@ export const useTaskStore = defineStore("tasks", {
         // Check if we're in development mode
         if (localStorage.getItem('dev_mode_user')) {
           console.log('Using development mode tasks');
+          // Reload from localStorage in case it was updated in another tab
+          devModeTasks = loadDevModeTasks();
           this.tasks = [...devModeTasks];
           return;
         }
         
         // Otherwise use Supabase
+        // Get the current user's ID
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('No authenticated user found');
+        }
+        
+        console.log('Fetching tasks for user:', user.id);
+        
         const { data: tasks, error } = await supabase
           .from("tasks")
           .select("*")
+          .eq("user_id", user.id)
           .order("id", { ascending: false });
           
         if (error) throw error;
-        this.tasks = tasks;
+        
+        // Restore _kanbanColumn property from localStorage if available
+        const kanbanState = localStorage.getItem('kanban_column_state');
+        const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+        
+        // Apply the saved kanban column state to each task
+        this.tasks = tasks.map(task => {
+          const savedState = kanbanStateObj[task.id];
+          if (savedState && !task.is_complete) {
+            return { 
+              ...task, 
+              _kanbanColumn: savedState === 'in-progress' ? 'in-progress' : 'todo'
+            };
+          }
+          return task;
+        });
       } catch (error) {
         console.error('Error fetching tasks:', error);
         this.setError('Failed to load tasks. Please try again.');
@@ -125,24 +174,44 @@ export const useTaskStore = defineStore("tasks", {
           };
           
           devModeTasks.unshift(newTask);
+          // Save to localStorage
+          this.saveDevModeTasks();
           await this.fetchTasks();
           this.setSuccess('Task created successfully!');
           return [newTask];
         }
         
         // Otherwise use Supabase
+        // Get the current user's ID to ensure we're using the authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Use the provided user_id if available, otherwise use the authenticated user's ID
+        const effectiveUserId = user_id || (user ? user.id : null);
+        
+        if (!effectiveUserId) {
+          throw new Error('No user ID available for task creation');
+        }
+        
+        // Create task object without status field for database compatibility
+        const taskData = { 
+          title, 
+          description, 
+          user_id: effectiveUserId,
+          is_complete: status === 'done',
+          importance
+          // status field is not included as it's not in the database schema
+        };
+        
+        console.log('Creating task in database:', taskData);
+        
+        // Make sure we have a valid user ID
+        if (!taskData.user_id) {
+          throw new Error('User ID is required to create a task');
+        }
+        
         const { data, error } = await supabase
           .from("tasks")
-          .insert([
-            { 
-              title, 
-              description, 
-              user_id, 
-              is_complete: status === 'done',
-              importance,
-              status
-            }
-          ]);
+          .insert([taskData]);
         
         if (error) throw error;
         await this.fetchTasks();
@@ -169,6 +238,8 @@ export const useTaskStore = defineStore("tasks", {
           
           if (index !== -1) {
             devModeTasks[index] = { ...devModeTasks[index], ...updates };
+            // Save to localStorage
+            this.saveDevModeTasks();
             await this.fetchTasks();
             this.setSuccess('Task updated successfully!');
             return [devModeTasks[index]];
@@ -177,10 +248,48 @@ export const useTaskStore = defineStore("tasks", {
         }
         
         // Otherwise use Supabase
+        // Make a copy of updates to modify for database compatibility
+        const dbUpdates = { ...updates };
+        
+        // Save the kanban column state to localStorage if it's provided
+        if (updates._kanbanColumn) {
+          const kanbanState = localStorage.getItem('kanban_column_state');
+          const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+          kanbanStateObj[id] = updates._kanbanColumn;
+          localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+          console.log(`Saved kanban column state for task ${id}:`, updates._kanbanColumn);
+        }
+        
+        // Remove fields that don't exist in the database schema
+        const fieldsToRemove = ['status', '_inProgress', '_kanbanColumn', 'computedStatus'];
+        for (const field of fieldsToRemove) {
+          if (field in dbUpdates) {
+            console.log(`Removing ${field} field for database update`);
+            delete dbUpdates[field];
+          }
+        }
+        
+        // Map status to is_complete if needed
+        if (updates.status === 'done') {
+          dbUpdates.is_complete = true;
+        } else if (updates.status === 'todo' || updates.status === 'in-progress') {
+          dbUpdates.is_complete = false;
+        }
+        
+        console.log('Sending updates to database:', dbUpdates);
+        
+        // Get the current user's ID
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('No authenticated user found');
+        }
+        
+        // Only update tasks that belong to the current user
         const { data, error } = await supabase
           .from("tasks")
-          .update(updates)
-          .match({ id });
+          .update(dbUpdates)
+          .match({ id, user_id: user.id });
         
         if (error) throw error;
         await this.fetchTasks();
@@ -210,20 +319,41 @@ export const useTaskStore = defineStore("tasks", {
       this.error = null;
       
       try {
+        // Remove the task from the kanban column state
+        const kanbanState = localStorage.getItem('kanban_column_state');
+        if (kanbanState) {
+          const kanbanStateObj = JSON.parse(kanbanState);
+          if (kanbanStateObj[id]) {
+            delete kanbanStateObj[id];
+            localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+            console.log(`Removed task ${id} from kanban column state`);
+          }
+        }
+        
         // Check if we're in development mode
         if (localStorage.getItem('dev_mode_user')) {
           console.log('Deleting task in development mode', id);
           devModeTasks = devModeTasks.filter(task => task.id !== id);
+          // Save to localStorage
+          this.saveDevModeTasks();
           await this.fetchTasks();
           this.setSuccess('Task deleted successfully!');
           return;
         }
         
         // Otherwise use Supabase
+        // Get the current user's ID
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('No authenticated user found');
+        }
+        
+        // Only delete tasks that belong to the current user
         const { error } = await supabase
           .from("tasks")
           .delete()
-          .match({ id });
+          .match({ id, user_id: user.id });
         
         if (error) throw error;
         await this.fetchTasks();

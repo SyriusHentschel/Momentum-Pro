@@ -150,11 +150,7 @@
           </div>
           <span class="task-count">{{ inProgressTasks.length }}</span>
         </div>
-        <div class="column-actions">
-          <button @click="createNewTask('in-progress')" class="add-task-btn">
-            <span class="icon">+</span> Add Task
-          </button>
-        </div>
+        <!-- No Add Task button for In Progress column -->
         
         <div v-if="!collapsedColumns['in-progress']" class="column-content">
         <!-- No Swimlanes -->
@@ -271,15 +267,11 @@
             <button @click="toggleColumn('done')" class="collapse-btn">
               <span class="collapse-icon" :class="{ 'collapsed': collapsedColumns.done }">▼</span>
             </button>
-            <h3>Done</h3>
+            <h3>Complete</h3>
           </div>
           <span class="task-count">{{ doneTasks.length }}</span>
         </div>
-        <div class="column-actions">
-          <button @click="createNewTask('done')" class="add-task-btn">
-            <span class="icon">+</span> Add Task
-          </button>
-        </div>
+        <!-- No Add Task button for Done column -->
         
         <div v-if="!collapsedColumns.done" class="column-content">
         <!-- No Swimlanes -->
@@ -440,7 +432,7 @@
             <select v-model="editTaskForm.status" class="status-select">
               <option value="todo">To Do</option>
               <option value="in-progress">In Progress</option>
-              <option value="done">Done</option>
+              <option value="done">Complete</option>
             </select>
           </div>
           
@@ -473,11 +465,15 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from '../store/task';
+import { useUserStore } from '../store/user';
+import { useToastStore } from '../store/toast';
 import { usePreferencesStore } from '../store/preferences';
+import { supabase } from '../supabase';
 import draggable from 'vuedraggable';
 
 const taskStore = useTaskStore();
 const preferencesStore = usePreferencesStore();
+const toastStore = useToastStore();
 const { tasks } = storeToRefs(taskStore);
 
 // Task lists for each column
@@ -525,21 +521,76 @@ const editTaskForm = ref({
 const showDeleteConfirm = ref(false);
 const taskToDeleteId = ref(null);
 
-// Sort tasks into columns based on status
+// Sort tasks into columns based on status or is_complete
 const sortTasksIntoColumns = () => {
   if (!tasks.value) return;
   
-  todoTasks.value = tasks.value.filter(task => 
-    task.status === 'todo' || (!task.status && !task.is_complete)
+  // Create a local copy of tasks with computed status for each task
+  const tasksWithStatus = tasks.value.map(task => {
+    // Create a new object with all properties from the original task
+    const taskWithStatus = { ...task };
+    
+    // First check if we have a saved kanban column state for this task
+    const kanbanState = localStorage.getItem('kanban_column_state');
+    const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+    const savedColumn = kanbanStateObj[taskWithStatus.id];
+    
+    // If the task has a status field (dev mode), use that
+    if (taskWithStatus.status) {
+      taskWithStatus.computedStatus = taskWithStatus.status;
+    } 
+    // If the task is complete, it goes in the done column
+    else if (taskWithStatus.is_complete) {
+      taskWithStatus.computedStatus = 'done';
+    }
+    // Check for the special marker in the description
+    else if (taskWithStatus.description && taskWithStatus.description.includes('[STATUS:in-progress]')) {
+      taskWithStatus.computedStatus = 'in-progress';
+      taskWithStatus._kanbanColumn = 'in-progress';
+    }
+    // If we have a saved column state and it's in-progress, use that
+    else if (savedColumn === 'in-progress' || taskWithStatus._kanbanColumn === 'in-progress') {
+      taskWithStatus.computedStatus = 'in-progress';
+      // Make sure the _kanbanColumn property is set
+      taskWithStatus._kanbanColumn = 'in-progress';
+    }
+    // Otherwise, it's a todo task
+    else {
+      taskWithStatus.computedStatus = 'todo';
+    }
+    
+    return taskWithStatus;
+  });
+  
+  // Log the tasks with their computed status for debugging
+  console.log('Tasks with computed status:', tasksWithStatus.map(t => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    is_complete: t.is_complete,
+    _kanbanColumn: t._kanbanColumn,
+    computedStatus: t.computedStatus
+  })));
+  
+  // Now filter tasks into columns based on computed status
+  todoTasks.value = tasksWithStatus.filter(task => 
+    task.computedStatus === 'todo'
   );
   
-  inProgressTasks.value = tasks.value.filter(task => 
-    task.status === 'in-progress'
+  inProgressTasks.value = tasksWithStatus.filter(task => 
+    task.computedStatus === 'in-progress'
   );
   
-  doneTasks.value = tasks.value.filter(task => 
-    task.status === 'done' || (!task.status && task.is_complete)
+  doneTasks.value = tasksWithStatus.filter(task => 
+    task.computedStatus === 'done'
   );
+  
+  // Log the column counts for debugging
+  console.log('Column counts:', {
+    todo: todoTasks.value.length,
+    inProgress: inProgressTasks.value.length,
+    done: doneTasks.value.length
+  });
 };
 
 // Watch for changes in tasks and update columns
@@ -558,10 +609,36 @@ const onDragChange = async (column, event) => {
     let newStatus = column;
     let isComplete = column === 'done';
     
-    await taskStore.updateTask(task.id, { 
+    // Set a local property to track which column this task is in
+    // This won't be sent to the database because we'll filter it out
+    task._kanbanColumn = column;
+    
+    // Save the kanban column state to localStorage
+    const kanbanState = localStorage.getItem('kanban_column_state');
+    const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+    kanbanStateObj[task.id] = column;
+    localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+    
+    // Update the task with appropriate fields
+    const updateData = { 
       is_complete: isComplete,
-      status: newStatus
-    });
+      _kanbanColumn: column // Include this so it gets passed to the store
+    };
+    
+    // Add a special marker in the description for in-progress tasks
+    if (column === 'in-progress' && task.description && !task.description.includes('[STATUS:in-progress]')) {
+      updateData.description = `[STATUS:in-progress] ${task.description || ''}`;
+    } else if (column !== 'in-progress' && task.description && task.description.includes('[STATUS:in-progress]')) {
+      // Remove the marker if the task is no longer in progress
+      updateData.description = task.description.replace('[STATUS:in-progress] ', '');
+    }
+    
+    // Only include status for dev mode tasks
+    if (localStorage.getItem('dev_mode_user')) {
+      updateData.status = newStatus;
+    }
+    
+    await taskStore.updateTask(task.id, updateData);
     
     console.log(`Task moved to ${column} column:`, task.title);
   }
@@ -581,9 +658,16 @@ const onDragChange = async (column, event) => {
 // Truncate description for display
 const truncateDescription = (description) => {
   if (!description) return 'No description';
-  return description.length > 60 
-    ? description.substring(0, 60) + '...' 
-    : description;
+  
+  // Remove the status marker for display
+  let displayDescription = description;
+  if (displayDescription.includes('[STATUS:in-progress]')) {
+    displayDescription = displayDescription.replace('[STATUS:in-progress] ', '');
+  }
+  
+  return displayDescription.length > 60 
+    ? displayDescription.substring(0, 60) + '...' 
+    : displayDescription;
 };
 
 // Update swimlanes
@@ -631,12 +715,44 @@ const getTasksByDateRange = (taskList, range) => {
 
 // Edit task
 const editTask = (task) => {
+  // Determine the correct status based on the task's current column
+  let currentStatus = task.status;
+  
+  // If no status is set, determine it from _kanbanColumn or is_complete
+  if (!currentStatus) {
+    if (task._kanbanColumn) {
+      currentStatus = task._kanbanColumn;
+    } else if (task.is_complete) {
+      currentStatus = 'done';
+    } else {
+      // Check the kanban state in localStorage
+      const kanbanState = localStorage.getItem('kanban_column_state');
+      const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+      currentStatus = kanbanStateObj[task.id] || 'todo';
+    }
+    
+    // Also check for the special marker in the description
+    if (task.description && task.description.includes('[STATUS:in-progress]')) {
+      currentStatus = 'in-progress';
+    }
+  }
+  
+  console.log('Editing task with status:', currentStatus, 'Task:', task);
+  
+  // Clean up the description by removing the status marker for display
+  let cleanDescription = task.description || '';
+  if (cleanDescription.includes('[STATUS:in-progress]')) {
+    cleanDescription = cleanDescription.replace('[STATUS:in-progress] ', '');
+  }
+  
   editTaskForm.value = {
     id: task.id,
     title: task.title,
-    description: task.description || '',
+    description: cleanDescription,
     importance: task.importance || 'medium',
-    status: task.status || (task.is_complete ? 'done' : 'todo')
+    status: currentStatus,
+    // Store the original description with marker for reference
+    originalDescription: task.description
   };
   showEditModal.value = true;
 };
@@ -645,6 +761,7 @@ const editTask = (task) => {
 const saveTaskEdit = async () => {
   if (!editTaskForm.value.title.trim()) return;
   
+  // Create base task data that works for both database and dev mode
   const taskData = {
     title: editTaskForm.value.title.trim(),
     description: editTaskForm.value.description.trim(),
@@ -652,18 +769,66 @@ const saveTaskEdit = async () => {
     is_complete: editTaskForm.value.status === 'done'
   };
   
+  // Handle the special marker in the description for in-progress tasks
+  // This helps us identify them even without a status field
+  if (editTaskForm.value.status === 'in-progress') {
+    // Add the marker if it's not already there
+    if (!taskData.description.includes('[STATUS:in-progress]')) {
+      taskData.description = `[STATUS:in-progress] ${taskData.description}`;
+    }
+  } else {
+    // Remove the marker if the task is no longer in progress
+    // Check both the current description and the original description
+    if (taskData.description.includes('[STATUS:in-progress]')) {
+      taskData.description = taskData.description.replace('[STATUS:in-progress] ', '');
+    } else if (editTaskForm.value.originalDescription && 
+               editTaskForm.value.originalDescription.includes('[STATUS:in-progress]')) {
+      // If the original had the marker but the current doesn't (because we cleaned it),
+      // make sure we're not adding the marker back
+      taskData.description = taskData.description;
+    }
+  }
+  
+  // Only add status for dev mode
+  if (localStorage.getItem('dev_mode_user')) {
+    taskData.status = editTaskForm.value.status;
+  }
+  
+  // Set the _kanbanColumn property to track which column this task is in
+  // This won't be sent to the database because we'll filter it out
+  taskData._kanbanColumn = editTaskForm.value.status;
+  
+  // Save the kanban column state to localStorage
+  const kanbanState = localStorage.getItem('kanban_column_state');
+  const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+  
+  if (editTaskForm.value.id) {
+    // For existing tasks, save the column state
+    kanbanStateObj[editTaskForm.value.id] = editTaskForm.value.status;
+  }
+  
+  localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+  
   if (editTaskForm.value.id) {
     // Update existing task
     await taskStore.updateTask(editTaskForm.value.id, taskData);
   } else {
     // Create new task
-    // Use a valid UUID for anonymous users or get from localStorage
-    const userId = localStorage.getItem('user_id') || localStorage.getItem('dev_mode_user') || '00000000-0000-0000-0000-000000000000';
+    // Get the current user ID from the user store
+    const userStore = useUserStore();
+    await userStore.fetchUser(); // Make sure we have the latest user data
     
-    // Enable dev mode if no valid user ID is found
-    if (!localStorage.getItem('user_id') && !localStorage.getItem('dev_mode_user')) {
-      localStorage.setItem('dev_mode_user', 'dev-user-123');
+    // Get the current user from Supabase directly
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+    
+    if (!userId) {
+      console.error('No authenticated user found');
+      toastStore.error('You must be logged in to create tasks');
+      return;
     }
+    
+    console.log('Creating task with user ID:', userId);
     
     await taskStore.createTask(
       taskData.title,
@@ -742,13 +907,27 @@ const formatDate = (dateString, includeTime = false) => {
   });
 };
 
-onMounted(async () => {
-  // Enable development mode by default if no user is logged in
-  if (!localStorage.getItem('user_id') && !localStorage.getItem('dev_mode_user')) {
-    console.log('Enabling development mode for testing');
+// Check if developer mode is enabled
+const isDevMode = computed(() => {
+  return !!localStorage.getItem('dev_mode_user');
+});
+
+// Toggle developer mode
+const toggleDevMode = () => {
+  if (isDevMode.value) {
+    // Disable dev mode
+    localStorage.removeItem('dev_mode_user');
+    localStorage.removeItem('dev_mode_tasks');
+  } else {
+    // Enable dev mode
     localStorage.setItem('dev_mode_user', 'dev-user-123');
   }
   
+  // Refresh tasks
+  taskStore.fetchTasks();
+};
+
+onMounted(async () => {
   // Fetch tasks if not already loaded
   if (!tasks.value || tasks.value.length === 0) {
     await taskStore.fetchTasks();
@@ -783,7 +962,6 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
-<<<<<<< HEAD
 .swimlane-selector label {
   font-size: 0.9rem;
   color: var(--color-text-secondary);
@@ -796,6 +974,37 @@ onMounted(async () => {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   font-size: 0.9rem;
+}
+
+.swimlane-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.dev-mode-toggle button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background-color: #f1f1f1;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.dev-mode-toggle button.active {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #388E3C;
+}
+
+.dev-mode-toggle button:hover {
+  background-color: #e0e0e0;
+}
+
+.dev-mode-toggle button.active:hover {
+  background-color: #388E3C;
 }
 
 .kanban-board {

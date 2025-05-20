@@ -207,6 +207,32 @@
                 </select>
               </div>
             </div>
+            
+            <div class="preference-section">
+              <h4>Developer Options</h4>
+              <div class="dev-mode-toggle">
+                <button 
+                  @click="toggleDevMode" 
+                  :style="{
+                    padding: '8px 12px',
+                    backgroundColor: isDevMode ? '#ff4444' : '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    marginBottom: '10px',
+                    width: '100%'
+                  }"
+                >
+                  {{ isDevMode ? '🔴 Disable Development Mode' : '🟢 Enable Development Mode' }}
+                </button>
+                <div v-if="isDevMode" style="margin-top: 5px; font-size: 12px; color: #ff4444;">
+                  <p><strong>Warning:</strong> Development mode is active. This bypasses authentication and uses local storage instead of the database.</p>
+                  <p>Only use this mode for testing and development purposes.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -526,6 +552,11 @@ const lowImportancePercentage = computed(() => {
   return Math.round((lowImportanceTasks.value / totalTasks.value) * 100);
 });
 
+// Check if developer mode is enabled
+const isDevMode = computed(() => {
+  return !!localStorage.getItem('dev_mode_user');
+});
+
 // Recent tasks (last 5)
 const recentTasks = computed(() => {
   if (!tasks.value) return [];
@@ -663,6 +694,35 @@ const setTheme = (theme) => {
   userPreferences.value.theme = theme;
   preferencesStore.setTheme(theme);
   savePreferences();
+};
+
+// Toggle developer mode
+const toggleDevMode = () => {
+  if (isDevMode.value) {
+    // Disable dev mode
+    localStorage.removeItem('dev_mode_user');
+    localStorage.removeItem('dev_mode_tasks');
+    toastStore.info('Development mode disabled');
+  } else {
+    // Enable dev mode with a proper user object
+    const mockUser = {
+      id: 'dev-user-123',
+      email: 'dev@example.com',
+      user_metadata: {
+        full_name: 'Development User'
+      },
+      app_metadata: {
+        provider: 'development'
+      }
+    };
+    localStorage.setItem('dev_mode_user', JSON.stringify(mockUser));
+    toastStore.info('Development mode enabled');
+  }
+  
+  // Reload the page to ensure all components recognize the dev mode change
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
 };
 
 // Save preferences

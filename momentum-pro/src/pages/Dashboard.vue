@@ -73,6 +73,18 @@
             </select>
           </div>
           
+          <div class="form-row">
+            <label for="task-status">
+              <span class="label-icon">📋</span>
+              Status:
+            </label>
+            <select id="task-status" v-model="newTaskStatus" class="status-select">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Complete</option>
+            </select>
+          </div>
+          
           <button 
             @click="addTask" 
             class="add-task-btn" 
@@ -189,7 +201,7 @@
                 <select v-model="editTaskForm.status" class="status-select">
                   <option value="todo">To Do</option>
                   <option value="in-progress">In Progress</option>
-                  <option value="done">Done</option>
+                  <option value="done">Complete</option>
                 </select>
               </div>
               
@@ -273,11 +285,14 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useUserStore } from '../store/user';
 import { useTaskStore } from '../store/task';
+import { useToastStore } from '../store/toast';
 import { usePreferencesStore } from '../store/preferences';
+import { supabase } from '../supabase';
 
 const router = useRouter();
 const userStore = useUserStore();
 const taskStore = useTaskStore();
+const toastStore = useToastStore();
 const preferencesStore = usePreferencesStore();
 const { user } = storeToRefs(userStore);
 const { tasks, isLoading } = storeToRefs(taskStore);
@@ -290,6 +305,7 @@ const taskSort = ref(preferencesStore.taskSort);
 const newTaskTitle = ref('');
 const newTaskDescription = ref('');
 const newTaskImportance = ref('medium');
+const newTaskStatus = ref('todo');
 const isAddingTask = ref(false);
 
 // Edit task state
@@ -396,17 +412,39 @@ const addTask = async () => {
   
   try {
     isAddingTask.value = true;
+    
+    // Get the current user from Supabase directly
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const userId = currentUser?.id;
+    
+    if (!userId) {
+      console.error('No authenticated user found');
+      toastStore.error('You must be logged in to create tasks');
+      return;
+    }
+    
+    // Prepare description with status marker if needed
+    let description = newTaskDescription.value.trim();
+    if (newTaskStatus.value === 'in-progress' && !description.includes('[STATUS:in-progress]')) {
+      description = `[STATUS:in-progress] ${description}`;
+    }
+    
+    // Set is_complete based on status
+    const isComplete = newTaskStatus.value === 'done';
+    
     await taskStore.createTask(
       newTaskTitle.value.trim(),
-      newTaskDescription.value.trim(),
-      user.value.id,
-      newTaskImportance.value
+      description,
+      userId,
+      newTaskImportance.value,
+      newTaskStatus.value
     );
     
     // Clear form
     newTaskTitle.value = '';
     newTaskDescription.value = '';
     newTaskImportance.value = 'medium';
+    newTaskStatus.value = 'todo';
   } catch (error) {
     console.error('Error adding task:', error);
   } finally {
@@ -424,12 +462,31 @@ const toggleTaskStatus = async (task) => {
 
 // Start editing a task
 const startEditTask = (task) => {
+  // Clean up the description by removing the status marker for display
+  let cleanDescription = task.description || '';
+  if (cleanDescription.includes('[STATUS:in-progress]')) {
+    cleanDescription = cleanDescription.replace('[STATUS:in-progress] ', '');
+  }
+  
+  // Determine the correct status
+  let status = task.status;
+  if (!status) {
+    if (task.is_complete) {
+      status = 'done';
+    } else if (task.description && task.description.includes('[STATUS:in-progress]')) {
+      status = 'in-progress';
+    } else {
+      status = 'todo';
+    }
+  }
+  
   editingTaskId.value = task.id;
   editTaskForm.value = {
     title: task.title,
-    description: task.description || '',
+    description: cleanDescription,
     importance: task.importance || 'medium',
-    status: task.status || (task.is_complete ? 'done' : 'todo')
+    status: status,
+    originalDescription: task.description // Store original for reference
   };
 };
 
@@ -439,13 +496,46 @@ const saveTaskEdit = async (taskId) => {
   
   try {
     const status = editTaskForm.value.status || 'todo';
-    await taskStore.updateTask(taskId, {
+    
+    // Prepare description with status marker if needed
+    let description = editTaskForm.value.description.trim();
+    
+    if (status === 'in-progress') {
+      // Add the marker if it's not already there
+      if (!description.includes('[STATUS:in-progress]')) {
+        description = `[STATUS:in-progress] ${description}`;
+      }
+    } else {
+      // Remove the marker if the task is no longer in progress
+      if (description.includes('[STATUS:in-progress]')) {
+        description = description.replace('[STATUS:in-progress] ', '');
+      }
+    }
+    
+    // Create base task data that works for both database and dev mode
+    const updateData = {
       title: editTaskForm.value.title.trim(),
-      description: editTaskForm.value.description.trim(),
+      description: description,
       importance: editTaskForm.value.importance,
-      status: status,
       is_complete: status === 'done'
-    });
+    };
+    
+    // Only add status for dev mode
+    if (localStorage.getItem('dev_mode_user')) {
+      updateData.status = status;
+    }
+    
+    // Set the _kanbanColumn property to track which column this task is in
+    // This won't be sent to the database because we'll filter it out
+    updateData._kanbanColumn = status;
+    
+    // Save the kanban column state to localStorage
+    const kanbanState = localStorage.getItem('kanban_column_state');
+    const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+    kanbanStateObj[taskId] = status;
+    localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+    
+    await taskStore.updateTask(taskId, updateData);
     
     // Exit edit mode
     editingTaskId.value = null;
