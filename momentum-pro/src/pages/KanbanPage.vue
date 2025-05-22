@@ -84,7 +84,7 @@
                 <select id="task-status" v-model="newTaskStatus" class="status-select">
                   <option value="todo">To Do</option>
                   <option value="in-progress">In Progress</option>
-                  <option value="done">Done</option>
+                  <option value="done">Complete</option>
                 </select>
               </div>
             </div>
