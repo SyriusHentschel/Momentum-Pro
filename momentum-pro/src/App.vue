@@ -1,4 +1,4 @@
-yes<template>
+<template>
   <div class="app-container">
     <!-- Background elements -->
     <div class="app-background">

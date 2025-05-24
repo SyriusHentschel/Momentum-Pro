@@ -3,6 +3,7 @@ import Dashboard from '../pages/Dashboard.vue';
 import Auth from '../pages/Auth.vue';
 import AuthCallback from '../pages/AuthCallback.vue';
 import ProfilePage from '../pages/ProfilePage.vue';
+import KanbanPage from '../pages/KanbanPage.vue';
 import { supabase } from '../supabase';
 
 const routes = [
@@ -10,6 +11,12 @@ const routes = [
     path: '/',
     name: 'Dashboard',
     component: Dashboard,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/kanban',
+    name: 'Kanban',
+    component: KanbanPage,
     meta: { requiresAuth: true }
   },
   {

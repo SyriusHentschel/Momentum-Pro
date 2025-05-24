@@ -260,7 +260,7 @@
       </div>
       </div>
 
-      <!-- Done Column -->
+      <!-- Complete Column -->
       <div class="kanban-column done-column">
         <div class="column-header">
           <div class="header-title">
@@ -271,7 +271,7 @@
           </div>
           <span class="task-count">{{ doneTasks.length }}</span>
         </div>
-        <!-- No Add Task button for Done column -->
+        <!-- No Add Task button for Complete column -->
         
         <div v-if="!collapsedColumns.done" class="column-content">
         <!-- No Swimlanes -->

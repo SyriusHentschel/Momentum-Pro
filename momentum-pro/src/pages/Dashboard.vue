@@ -1020,6 +1020,8 @@ h3::before {
   gap: 1rem;
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
+  margin-bottom: 1rem;
+  width: 100%;
 }
 
 .form-row:hover {
@@ -1030,10 +1032,17 @@ h3::before {
   color: var(--color-text-secondary);
   font-weight: 500;
   min-width: 100px;
+  width: 100px;
   transition: all 0.3s ease;
   position: relative;
   display: flex;
   align-items: center;
+}
+
+.importance-select, .status-select {
+  flex: 1;
+  min-width: 140px;
+  width: 100%;
 }
 
 .form-row:hover label {
@@ -1063,7 +1072,7 @@ h3::before {
     margin-bottom: 0.3rem;
   }
   
-  .importance-select {
+  .importance-select, .status-select {
     width: 100%;
   }
 }
