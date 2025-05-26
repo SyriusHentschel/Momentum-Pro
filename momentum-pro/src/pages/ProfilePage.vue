@@ -208,7 +208,8 @@
               </div>
             </div>
             
-            <div class="preference-section">
+            <!-- Developer Options - Only visible to authorized developers -->
+            <div v-if="isDeveloper" class="preference-section">
               <h4>Developer Options</h4>
               <div class="dev-mode-toggle">
                 <button 
@@ -514,6 +515,19 @@ const avatarStyle = computed(() => {
   return {};
 });
 
+// Check if the current user is a developer
+const isDeveloper = computed(() => {
+  // List of authorized developer emails
+  const developerEmails = [
+    'slyriuz@hotmail.com',  // Your email
+    'dev@example.com',      // Development account
+    'admin@momentum-pro.com'
+  ];
+  
+  // Check if the user's email is in the authorized list
+  return user.value && developerEmails.includes(user.value.email);
+});
+
 // Computed properties for task statistics
 const totalTasks = computed(() => tasks.value?.length || 0);
 const completedTasks = computed(() => tasks.value?.filter(task => task.is_complete).length || 0);
@@ -698,6 +712,12 @@ const setTheme = (theme) => {
 
 // Toggle developer mode
 const toggleDevMode = () => {
+  // Security check - only allow developers to toggle dev mode
+  if (!isDeveloper.value) {
+    toastStore.error('You do not have permission to use developer mode');
+    return;
+  }
+  
   if (isDevMode.value) {
     // Disable dev mode
     localStorage.removeItem('dev_mode_user');
