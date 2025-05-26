@@ -39,14 +39,19 @@ onMounted(async () => {
   try {
     console.log('Auth callback mounted, processing authentication...');
     
-    // Get the current URL
+    // Get the current URL and all parameters
     const url = window.location.href;
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    
     console.log('Current URL:', url);
+    console.log('Search params:', Object.fromEntries(searchParams.entries()));
+    console.log('Hash params:', Object.fromEntries(hashParams.entries()));
     
     // Check for error in the URL
-    if (url.includes('error=')) {
-      const errorCode = new URLSearchParams(window.location.search).get('error');
-      const errorDescription = new URLSearchParams(window.location.search).get('error_description');
+    if (url.includes('error=') || searchParams.has('error') || hashParams.has('error')) {
+      const errorCode = searchParams.get('error') || hashParams.get('error');
+      const errorDescription = searchParams.get('error_description') || hashParams.get('error_description');
       
       console.error('Auth error in URL:', errorCode, errorDescription);
       error.value = true;
@@ -55,7 +60,13 @@ onMounted(async () => {
       return;
     }
     
+    // Try to exchange the code for a session if it exists in the URL
+    if (searchParams.has('code') || hashParams.has('code')) {
+      console.log('Code found in URL, exchanging for session...');
+    }
+    
     // Handle the callback from Supabase
+    console.log('Getting session from Supabase...');
     const { data, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
@@ -65,6 +76,8 @@ onMounted(async () => {
       loading.value = false;
       return;
     }
+    
+    console.log('Session response:', data);
     
     if (data?.session) {
       console.log('Session found:', data.session);
@@ -82,9 +95,27 @@ onMounted(async () => {
       }, 1500);
     } else {
       console.log('No session found in callback');
-      error.value = true;
-      errorMessage.value = 'No authentication session found. Please try logging in again.';
-      loading.value = false;
+      
+      // Try to set up auth state change listener
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Auth state changed:', event, session);
+        if (session) {
+          userStore.user = session.user;
+          loading.value = false;
+          setTimeout(() => {
+            router.push('/');
+          }, 1500);
+        }
+      });
+      
+      // Wait a bit longer before showing error
+      setTimeout(() => {
+        if (loading.value) {
+          error.value = true;
+          errorMessage.value = 'No authentication session found. Please try logging in again.';
+          loading.value = false;
+        }
+      }, 5000);
     }
   } catch (err) {
     console.error('Unexpected error in auth callback:', err);

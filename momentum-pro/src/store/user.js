@@ -128,46 +128,57 @@ export const useUserStore = defineStore('user', {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: redirectUrl
-          }
-        });
-        
-        if (error) {
-          return handleAuthError(error, toastStore, 'Google sign-in');
-        }
-        
-        // This won't actually be reached immediately as the user will be redirected to Google
-        console.log('Google sign-in initiated');
-        return data;
-      } catch (error) {
-        return handleAuthError(error, toastStore, 'Google sign-in');
-      }
-    },
-    
-    async signInWithGoogle() {
-      console.log('Signing in with Google...');
-      const toastStore = useToastStore();
-      
-      try {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin + '/auth/callback'
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: true // Important: Skip automatic redirect
           }
         });
         
         if (error) {
           console.error('Google sign-in error:', error);
-          toastStore.error(`Google sign-in failed: ${error.message}`);
-          throw error;
+          return { error };
         }
         
-        // This won't actually be reached immediately as the user will be redirected to Google
-        console.log('Google sign-in initiated');
-        return data;
+        // Log the URL that we should redirect to
+        console.log('Google sign-in initiated, URL:', data?.url);
+        
+        // Return the data with the URL
+        return { data };
       } catch (error) {
-        toastStore.error(`Google sign-in failed: ${error.message}`);
-        throw error;
+        console.error('Unexpected error during Google sign-in:', error);
+        return { error };
+      }
+    },
+    
+    async signInWithGithub() {
+      console.log('Signing in with GitHub...');
+      const toastStore = useToastStore();
+      
+      try {
+        // Use a hardcoded redirect URL for GitHub specifically
+        const redirectUrl = 'http://localhost:3000/auth/callback';
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: redirectUrl,
+            scopes: 'read:user user:email',
+            skipBrowserRedirect: true // Important: Skip automatic redirect
+          }
+        });
+        
+        if (error) {
+          console.error('GitHub sign-in error:', error);
+          return { error };
+        }
+        
+        // Log the URL that we should redirect to
+        console.log('GitHub sign-in initiated, URL:', data?.url);
+        
+        // Return the data with the URL
+        return { data };
+      } catch (error) {
+        console.error('Unexpected error during GitHub sign-in:', error);
+        return { error };
       }
     },
     

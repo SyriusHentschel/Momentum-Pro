@@ -36,6 +36,19 @@ const routes = [
     name: 'AuthCallback',
     component: AuthCallback,
     meta: { requiresAuth: false }
+  },
+  // Catch-all route for the auth callback to handle any variations
+  {
+    path: '/:catchAll(.*)',
+    redirect: to => {
+      console.log('Catch-all route triggered for:', to.path);
+      // If it looks like an auth callback, redirect to our callback handler
+      if (to.path.includes('/callback') || to.fullPath.includes('code=')) {
+        return { path: '/auth/callback', query: to.query, hash: to.hash };
+      }
+      // Otherwise redirect to the auth page
+      return { path: '/auth' };
+    }
   }
 ];
 

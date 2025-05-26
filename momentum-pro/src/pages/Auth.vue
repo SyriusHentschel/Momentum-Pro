@@ -73,7 +73,7 @@
         <button 
           @click.prevent="handleGoogleSignIn" 
           class="google-btn" 
-          :disabled="googleLoading"
+          :disabled="googleLoading || githubLoading"
           aria-label="Sign in with Google"
         >
           <img 
@@ -87,6 +87,24 @@
           </span>
           <span v-else class="google-text">Continue with Google</span>
         </button>
+        
+        <button 
+          @click.prevent="handleGithubSignIn" 
+          class="github-btn" 
+          :disabled="googleLoading || githubLoading"
+          aria-label="Sign in with GitHub"
+        >
+          <img 
+            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTIgMGMtNi42MjYgMC0xMiA1LjM3My0xMiAxMiAwIDUuMzAyIDMuNDM4IDkuOCA4LjIwNyAxMS4zODcuNTk5LjExMS43OTMtLjI2MS43OTMtLjU3N3YtMi4yMzRjLTMuMzM4LjcyNi00LjAzMy0xLjQxNi00LjAzMy0xLjQxNi0uNTQ2LTEuMzg3LTEuMzMzLTEuNzU2LTEuMzMzLTEuNzU2LTEuMDg5LS43NDUuMDgzLS43MjkuMDgzLS43MjkgMS4yMDUuMDg0IDEuODM5IDEuMjM3IDEuODM5IDEuMjM3IDEuMDcgMS44MzQgMi44MDcgMS4zMDQgMy40OTIuOTk3LjEwNy0uNzc1LjQxOC0xLjMwNS43NjItMS42MDQtMi42NjUtLjMwNS01LjQ2Ny0xLjMzNC01LjQ2Ny01LjkzMSAwLTEuMzExLjQ2OS0yLjM4MSAxLjIzNi0zLjIyMS0uMTI0LS4zMDMtLjUzNS0xLjUyNC4xMTctMy4xNzYgMCAwIDEuMDA4LS4zMjIgMy4zMDEgMS4yMy45NTctLjI2NiAxLjk4My0uMzk5IDMuMDAzLS40MDQgMS4wMi4wMDUgMi4wNDcuMTM4IDMuMDA2LjQwNCAyLjI5MS0xLjU1MiAzLjI5Ny0xLjIzIDMuMjk3LTEuMjMuNjUzIDEuNjUzLjI0MiAyLjg3NC4xMTggMy4xNzYuNzcuODQgMS4yMzUgMS45MTEgMS4yMzUgMy4yMjEgMCA0LjYwOS0yLjgwNyA1LjYyNC01LjQ3OSA1LjkyMS40My4zNzIuODIzIDEuMTAyLjgyMyAyLjIyMnYzLjI5M2MwIC4zMTkuMTkyLjY5NC44MDEuNTc2IDQuNzY1LTEuNTg5IDguMTk5LTYuMDg2IDguMTk5LTExLjM4NiAwLTYuNjI3LTUuMzczLTEyLTEyLTEyeiIvPjwvc3ZnPg==" 
+            alt="GitHub" 
+            class="github-icon"
+            v-if="!githubLoading"
+          >
+          <span v-if="githubLoading" class="loading-text">
+            <span class="dot-animation">Connecting to GitHub</span>
+          </span>
+          <span v-else class="github-text">Continue with GitHub</span>
+        </button>
       </div>
 
       <div class="toggle-auth">
@@ -96,13 +114,6 @@
             {{ isLogin ? 'Create one now' : 'Login here' }}
           </a>
         </p>
-      </div>
-      
-      <!-- Development Mode Only - Remove in Production -->
-      <div class="dev-login">
-        <button @click.prevent="devLogin" class="dev-login-btn">
-          Development Login (Skip Email Verification)
-        </button>
       </div>
     </div>
   </div>
@@ -124,47 +135,10 @@ const password = ref('');
 const confirmPassword = ref('');
 const loading = ref(false);
 const googleLoading = ref(false);
+const githubLoading = ref(false);
 
 const toggleAuth = () => {
   isLogin.value = !isLogin.value;
-};
-
-// Development only function to bypass authentication completely
-const devLogin = () => {
-  console.log('Dev login button clicked');
-  
-  try {
-    // Create a mock user object
-    const mockUser = {
-      id: 'dev-user-123',
-      email: 'dev@example.com',
-      user_metadata: {
-        name: 'Development User'
-      }
-    };
-    
-    console.log('Created mock user:', mockUser);
-    
-    // Set the user in the store
-    userStore.user = mockUser;
-    console.log('User store updated:', userStore.user);
-    
-    // Store in localStorage to persist across page refreshes
-    localStorage.setItem('dev_mode_user', JSON.stringify(mockUser));
-    console.log('Saved to localStorage');
-    
-    // Show toast notification
-    toastStore.info('Logged in with development mode');
-    
-    // Force a small delay before redirecting
-    setTimeout(() => {
-      console.log('Redirecting to dashboard...');
-      router.push('/');
-    }, 100);
-  } catch (error) {
-    console.error('Error in dev login:', error);
-    toastStore.error('Development login failed');
-  }
 };
 
 const handleSubmit = async () => {
@@ -223,17 +197,63 @@ const handleGoogleSignIn = async () => {
   
   try {
     console.log('Starting Google sign-in process...');
-    await userStore.signInWithGoogle();
-    // Note: The user will be redirected to Google's OAuth page,
-    // so the code below won't execute immediately
-    toastStore.info('Redirecting to Google for authentication...');
+    const { data, error } = await userStore.signInWithGoogle();
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Check if we have a URL to redirect to
+    if (data && data.url) {
+      console.log('Redirecting to Google URL:', data.url);
+      toastStore.info('Redirecting to Google for authentication...');
+      
+      // Force redirect using window.location
+      setTimeout(() => {
+        window.location.href = data.url;
+      }, 500);
+    } else {
+      console.error('No redirect URL returned from Google sign-in');
+      toastStore.error('Failed to get Google authentication URL');
+      googleLoading.value = false;
+    }
   } catch (error) {
     console.error('Google sign-in error:', error);
     toastStore.error(error.message || 'An error occurred during Google authentication');
     googleLoading.value = false; // Reset loading state on error
   }
+};
+
+const handleGithubSignIn = async () => {
+  if (githubLoading.value) return; // Prevent multiple clicks
   
-  // We don't reset googleLoading here because the user will be redirected away
+  githubLoading.value = true;
+  
+  try {
+    console.log('Starting GitHub sign-in process...');
+    const { data, error } = await userStore.signInWithGithub();
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Check if we have a URL to redirect to
+    if (data && data.url) {
+      console.log('Redirecting to GitHub URL:', data.url);
+      toastStore.info('Redirecting to GitHub for authentication...');
+      
+      // Force redirect using window.location
+      window.location.href = data.url;
+    } else {
+      console.error('No redirect URL returned from GitHub sign-in');
+      toastStore.error('Failed to get GitHub authentication URL');
+      githubLoading.value = false;
+    }
+  } catch (error) {
+    console.error('GitHub sign-in error:', error);
+    toastStore.error(error.message || 'An error occurred during GitHub authentication');
+    githubLoading.value = false; // Reset loading state on error
+  }
 };
 </script>
 
@@ -464,57 +484,14 @@ input:focus {
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
-/* Development mode styles */
-.dev-login {
-  margin-top: 2rem;
-  border-top: 1px solid var(--color-light-gray);
-  padding-top: 1.5rem;
-  position: relative;
-}
 
-.dev-login::before {
-  content: 'DEV MODE';
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--color-bg-secondary);
-  padding: 0 10px;
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  letter-spacing: 1px;
-}
-
-.dev-login-btn {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: var(--color-gold);
-  color: var(--color-black);
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
-}
-
-@media (max-width: 576px) {
-  .dev-login-btn {
-    padding: 0.65rem;
-    font-size: 0.85rem;
-  }
-}
-
-.dev-login-btn:hover {
-  background-color: var(--color-gold-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.4);
-}
 
 /* Social login styles */
 .social-login {
   margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .divider {
@@ -539,14 +516,12 @@ input:focus {
   letter-spacing: 1px;
 }
 
-.google-btn {
+.google-btn, .github-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   padding: 0.75rem;
-  background-color: #ffffff; /* Pure white background */
-  color: #8a2be2; /* Deep purple color */
   border: 1px solid #d0d0d0; /* Darker border for better definition */
   border-radius: 4px;
   font-size: 0.95rem;
@@ -556,31 +531,56 @@ input:focus {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
 }
 
-.google-btn:hover {
-  background-color: #f8f8f8;
+.google-btn {
+  background-color: #ffffff; /* Pure white background */
+  color: #8a2be2; /* Deep purple color */
+}
+
+.github-btn {
+  background-color: #24292e; /* GitHub dark color */
+  color: white;
+}
+
+.google-btn:hover, .github-btn:hover {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
 }
 
-.google-btn:disabled {
+.google-btn:hover {
+  background-color: #f8f8f8;
+}
+
+.github-btn:hover {
+  background-color: #2f363d;
+}
+
+.google-btn:disabled, .github-btn:disabled {
   opacity: 0.7;
-  background-color: #f1f1f1;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-.google-icon {
+.google-icon, .github-icon {
   width: 18px;
   height: 18px;
   margin-right: 10px;
 }
 
-.google-text {
-  color: #8a2be2; /* Deep purple color */
+.github-icon {
+  filter: brightness(0) invert(1);
+  width: 24px;
+  height: 24px;
+}
+
+.google-text, .github-text {
   font-weight: 600; /* Bold text */
   font-size: 1.05rem; /* Larger font */
   letter-spacing: 0.3px; /* Slightly increased letter spacing for better readability */
+}
+
+.google-text {
+  color: #8a2be2; /* Deep purple color */
 }
 
 /* Loading animation */
