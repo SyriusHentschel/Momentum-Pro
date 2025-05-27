@@ -7,6 +7,8 @@
 ```
 
 ## By Victor Valerio
+### Last updated for deployment: Current Version
+
 
 Momentum Pro is a modern task management application built with Vue 3 and Supabase. It helps users organize their tasks, track progress, and boost productivity with a clean, intuitive interface.
 
