@@ -1,4 +1,4 @@
 # Netlify redirects file
 # This ensures that all routes are handled by the Vue Router
 
-/*    /index.html   200
+/*    /index.html   200!

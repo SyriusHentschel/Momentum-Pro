@@ -1,28 +1,11 @@
 # Netlify configuration file
 
-# Build settings
 [build]
-  # Directory to publish (relative to root of your repo)
   publish = "dist"
-  
-  # Default build command
   command = "npm run build"
 
-# Redirects and rewrites
 [[redirects]]
-  # Redirect all paths to index.html for SPA routing
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Headers to return with requests
-[[headers]]
-  # Define headers for all files
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "no-referrer-when-downgrade"
-    
-# For improved security, consider adding Content-Security-Policy headers in production
+  force = true
