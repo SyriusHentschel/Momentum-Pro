@@ -154,8 +154,9 @@ export const useUserStore = defineStore('user', {
       const toastStore = useToastStore();
       
       try {
-        // Use a hardcoded redirect URL for GitHub specifically
-        const redirectUrl = 'http://localhost:3000/auth/callback';
+        // Get redirect URL from environment variable or use default
+        const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || 
+                           window.location.origin + '/auth/callback';
         
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
