@@ -35,7 +35,7 @@ onMounted(async () => {
     // Add a class to the body for additional styling
     document.body.classList.add('momentum-app-body');
     
-    // Initialize theme
+    // Initialize theme and apply preferences
     preferencesStore.initTheme();
     
     await userStore.fetchUser() // here we call fetch user
