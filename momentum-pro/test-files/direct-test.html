@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Direct Test Page</h1>
+        <p>This page tests basic browser functionality without Vue.</p>
+        
+        <button id="testButton">Run Test</button>
+        <div id="status" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('testButton').addEventListener('click', function() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            
+            try {
+                // Test localStorage
+                localStorage.setItem('test', 'working');
+                const testValue = localStorage.getItem('test');
+                
+                if (testValue === 'working') {
+                    statusDiv.textContent = 'Success! Basic browser functionality is working correctly.';
+                    statusDiv.className = 'success';
+                    localStorage.removeItem('test');
+                } else {
+                    throw new Error('LocalStorage test failed');
+                }
+            } catch (error) {
+                statusDiv.textContent = 'Error: ' + error.message;
+                statusDiv.className = 'error';
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

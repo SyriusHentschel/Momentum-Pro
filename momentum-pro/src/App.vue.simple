@@ -1,0 +1,19 @@
+<template>
+  <div class="app-container">
+    <h1>Momentum Pro</h1>
+    <p>Simple test to see if Vue is working</p>
+  </div>
+</template>
+
+<script setup>
+// Empty script setup block
+</script>
+
+<style>
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+</style>

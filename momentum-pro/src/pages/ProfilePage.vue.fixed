@@ -1,0 +1,1556 @@
+<template>
+  <div class="profile-container">
+    <header class="profile-header">
+      <h1>My Profile</h1>
+      <router-link to="/" class="back-btn">
+        <span class="btn-text">Back to Dashboard</span>
+      </router-link>
+    </header>
+    
+    <main class="profile-content">
+      <div v-if="isLoading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading profile...</p>
+      </div>
+      
+      <div v-else class="profile-grid">
+        <!-- Profile Card -->
+        <div class="profile-card">
+          <div class="profile-header-section">
+            <div class="profile-avatar-container">
+              <div class="profile-avatar" :style="avatarStyle">
+                <span v-if="!profileImage" class="avatar-initials">{{ userInitials }}</span>
+              </div>
+              <button @click="triggerFileInput" class="avatar-upload-btn" title="Upload profile picture">
+                <span class="icon">📷</span>
+              </button>
+              <input 
+                type="file" 
+                ref="fileInput" 
+                @change="handleFileUpload" 
+                accept="image/*" 
+                class="file-input"
+              />
+            </div>
+            <div class="profile-name-section">
+              <h2>{{ displayName }}</h2>
+              <p class="member-since">Member since {{ formatDate(user?.created_at, true) || 'N/A' }}</p>
+            </div>
+          </div>
+          
+          <div class="profile-tabs">
+            <button 
+              @click="activeTab = 'info'" 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'info' }"
+            >
+              Information
+            </button>
+            <button 
+              @click="activeTab = 'edit'" 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'edit' }"
+            >
+              Edit Profile
+            </button>
+            <button 
+              @click="activeTab = 'preferences'" 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'preferences' }"
+            >
+              Preferences
+            </button>
+          </div>
+          
+          <!-- Information Tab -->
+          <div v-if="activeTab === 'info'" class="tab-content">
+            <h3>User Information</h3>
+            <div class="profile-info">
+              <div class="info-item">
+                <label>Email:</label>
+                <p>{{ user?.email || 'Not available' }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Display Name:</label>
+                <p>{{ userProfile.display_name || 'Not set' }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Last Sign In:</label>
+                <p>{{ formatDate(user?.last_sign_in_at) || 'Not available' }}</p>
+              </div>
+              
+              <div class="info-item">
+                <label>Account Type:</label>
+                <p>{{ getAccountType() }}</p>
+              </div>
+            </div>
+            
+            <div class="account-actions">
+              <button @click="showPasswordModal = true" class="action-btn">
+                Change Password
+              </button>
+              <button @click="showDeleteAccountModal = true" class="action-btn danger">
+                Delete Account
+              </button>
+            </div>
+          </div>
+          
+          <!-- Edit Profile Tab -->
+          <div v-if="activeTab === 'edit'" class="tab-content">
+            <h3>Edit Profile</h3>
+            <form @submit.prevent="updateProfile" class="edit-profile-form">
+              <div class="form-group">
+                <label for="displayName">Display Name</label>
+                <div class="input-wrapper">
+                  <input 
+                    type="text" 
+                    id="displayName" 
+                    v-model="userProfile.display_name" 
+                    placeholder="Enter your display name"
+                  />
+                  <span class="input-focus-effect"></span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="bio">Bio</label>
+                <div class="input-wrapper">
+                  <textarea 
+                    id="bio" 
+                    v-model="userProfile.bio" 
+                    placeholder="Tell us about yourself"
+                    rows="3"
+                  ></textarea>
+                  <span class="input-focus-effect"></span>
+                </div>
+              </div>
+              
+              <button type="submit" class="submit-btn" :disabled="isUpdating">
+                <span v-if="isUpdating" class="loading-text">
+                  <span class="dot-animation">Updating</span>
+                </span>
+                <span v-else>Save Changes</span>
+              </button>
+            </form>
+          </div>
+          
+          <!-- Preferences Tab -->
+          <div v-if="activeTab === 'preferences'" class="tab-content">
+            <h3>App Preferences</h3>
+            
+            <div class="preference-section">
+              <h4>Theme</h4>
+              <div class="theme-options">
+                <button 
+                  @click="setTheme('dark-default')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'dark-default' }"
+                >
+                  <span class="theme-icon">🌑</span>
+                  <span>Dark Default</span>
+                </button>
+                <button 
+                  @click="setTheme('light-gold')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'light-gold' }"
+                >
+                  <span class="theme-icon">✨</span>
+                  <span>Light Gold</span>
+                </button>
+                <button 
+                  @click="setTheme('professional-blue')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'professional-blue' }"
+                >
+                  <span class="theme-icon">🔷</span>
+                  <span>Professional Blue</span>
+                </button>
+                <button 
+                  @click="setTheme('elegant-purple')" 
+                  class="theme-btn" 
+                  :class="{ active: userPreferences.theme === 'elegant-purple' }"
+                >
+                  <span class="theme-icon">💜</span>
+                  <span>Elegant Purple</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="preference-section">
+              <h4>Task Display</h4>
+              <div class="form-group">
+                <label for="defaultTaskFilter">Default Task Filter</label>
+                <select 
+                  id="defaultTaskFilter" 
+                  v-model="userPreferences.defaultTaskFilter"
+                  @change="savePreferences"
+                >
+                  <option value="all">All Tasks</option>
+                  <option value="incomplete">Incomplete Tasks</option>
+                  <option value="complete">Completed Tasks</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="defaultTaskSort">Default Task Sort</label>
+                <select 
+                  id="defaultTaskSort" 
+                  v-model="userPreferences.defaultTaskSort"
+                  @change="savePreferences"
+                >
+                  <option value="date-desc">Newest First</option>
+                  <option value="date-asc">Oldest First</option>
+                  <option value="importance">By Importance</option>
+                  <option value="alphabetical">Alphabetical</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Developer Options - Only visible to authorized developers -->
+            <div v-if="isDeveloper" class="preference-section">
+              <h4>Developer Options</h4>
+              <div class="dev-mode-toggle">
+                <button 
+                  @click="toggleDevMode" 
+                  :style="{
+                    padding: '8px 12px',
+                    backgroundColor: isDevMode ? '#ff4444' : '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    marginBottom: '10px',
+                    width: '100%'
+                  }"
+                >
+                  {{ isDevMode ? '🔴 Disable Development Mode' : '🟢 Enable Development Mode' }}
+                </button>
+                <div v-if="isDevMode" style="margin-top: 5px; font-size: 12px; color: #ff4444;">
+                  <p><strong>Warning:</strong> Development mode is active. This bypasses authentication and uses local storage instead of the database.</p>
+                  <p>Only use this mode for testing and development purposes.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Stats Card -->
+        <div class="stats-card">
+          <h3>Task Statistics</h3>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-value">{{ totalTasks }}</span>
+              <span class="stat-label">Total Tasks</span>
+            </div>
+            
+            <div class="stat-card">
+              <span class="stat-value">{{ completedTasks }}</span>
+              <span class="stat-label">Completed</span>
+            </div>
+            
+            <div class="stat-card">
+              <span class="stat-value">{{ incompleteTasks }}</span>
+              <span class="stat-label">Pending</span>
+            </div>
+            
+            <div class="stat-card">
+              <span class="stat-value">{{ completionRate }}%</span>
+              <span class="stat-label">Completion Rate</span>
+            </div>
+          </div>
+          
+          <div class="task-chart">
+            <h4>Task Importance Distribution</h4>
+            <div class="chart-container">
+              <div class="chart-bar-container">
+                <div 
+                  class="chart-bar importance-high" 
+                  :style="{ width: `${highImportancePercentage}%` }"
+                  title="High Importance"
+                ></div>
+                <span class="chart-label">High: {{ highImportanceTasks }}</span>
+              </div>
+              
+              <div class="chart-bar-container">
+                <div 
+                  class="chart-bar importance-medium" 
+                  :style="{ width: `${mediumImportancePercentage}%` }"
+                  title="Medium Importance"
+                ></div>
+                <span class="chart-label">Medium: {{ mediumImportanceTasks }}</span>
+              </div>
+              
+              <div class="chart-bar-container">
+                <div 
+                  class="chart-bar importance-low" 
+                  :style="{ width: `${lowImportancePercentage}%` }"
+                  title="Low Importance"
+                ></div>
+                <span class="chart-label">Low: {{ lowImportanceTasks }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="activity-summary">
+            <h4>Recent Activity</h4>
+            <div v-if="recentTasks.length === 0" class="no-activity">
+              No recent task activity
+            </div>
+            <ul v-else class="activity-list">
+              <li v-for="task in recentTasks" :key="task.id" class="activity-item">
+                <span class="activity-icon" :class="{ 'completed': task.is_complete }">
+                  {{ task.is_complete ? '✓' : '🔄' }}
+                </span>
+                <div class="activity-details">
+                  <span class="activity-title">{{ task.title }}</span>
+                  <span class="activity-date">{{ formatDate(task.created_at) }}</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+    
+    <!-- Change Password Modal -->
+    <div v-if="showPasswordModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Change Password</h3>
+        <form @submit.prevent="changePassword" class="password-form">
+          <div class="form-group">
+            <label for="currentPassword">Current Password</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="currentPassword" 
+                v-model="passwordForm.currentPassword" 
+                required
+                placeholder="Enter your current password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="newPassword" 
+                v-model="passwordForm.newPassword" 
+                required
+                placeholder="Enter your new password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirmPassword">Confirm New Password</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                v-model="passwordForm.confirmPassword" 
+                required
+                placeholder="Confirm your new password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="submit" class="confirm-btn" :disabled="isPasswordChanging">
+              <span v-if="isPasswordChanging" class="loading-text">
+                <span class="dot-animation">Updating</span>
+              </span>
+              <span v-else>Change Password</span>
+            </button>
+            <button type="button" @click="showPasswordModal = false" class="cancel-btn">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Delete Account Modal -->
+    <div v-if="showDeleteAccountModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Delete Account</h3>
+        <p class="warning-text">
+          Warning: This action cannot be undone. All your data, including tasks and preferences, will be permanently deleted.
+        </p>
+        
+        <form @submit.prevent="deleteAccount" class="delete-account-form">
+          <div class="form-group">
+            <label for="deleteConfirmPassword">Enter your password to confirm</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="deleteConfirmPassword" 
+                v-model="deleteAccountPassword" 
+                required
+                placeholder="Enter your password"
+              />
+              <span class="input-focus-effect"></span>
+            </div>
+          </div>
+          
+          <div class="confirmation-checkbox">
+            <input 
+              type="checkbox" 
+              id="confirmDelete" 
+              v-model="confirmDeleteAccount"
+            />
+            <label for="confirmDelete">
+              I understand that this action is permanent and cannot be undone
+            </label>
+          </div>
+          
+          <div class="modal-actions">
+            <button 
+              type="submit" 
+              class="danger-btn" 
+              :disabled="!confirmDeleteAccount || isDeleting || !deleteAccountPassword"
+            >
+              <span v-if="isDeleting" class="loading-text">
+                <span class="dot-animation">Deleting</span>
+              </span>
+              <span v-else>Delete My Account</span>
+            </button>
+            <button type="button" @click="showDeleteAccountModal = false" class="cancel-btn">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useUserStore } from '../store/user';
+import { useTaskStore } from '../store/task';
+import { useToastStore } from '../store/toast';
+import { usePreferencesStore } from '../store/preferences';
+import { supabase } from '../supabase';
+
+const router = useRouter();
+const userStore = useUserStore();
+const taskStore = useTaskStore();
+const toastStore = useToastStore();
+const preferencesStore = usePreferencesStore();
+
+const { user } = storeToRefs(userStore);
+const { tasks } = storeToRefs(taskStore);
+
+// UI state
+const isLoading = ref(true);
+const isUpdating = ref(false);
+const isPasswordChanging = ref(false);
+const isDeleting = ref(false);
+const activeTab = ref('info');
+const showPasswordModal = ref(false);
+const showDeleteAccountModal = ref(false);
+const confirmDeleteAccount = ref(false);
+const deleteAccountPassword = ref('');
+const fileInput = ref(null);
+const profileImage = ref(null);
+
+// User profile state
+const userProfile = ref({
+  display_name: '',
+  bio: '',
+  avatar_url: null
+});
+
+// Password form state
+const passwordForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+
+// User preferences
+const userPreferences = ref({
+  theme: preferencesStore.theme,
+  defaultTaskFilter: preferencesStore.taskFilter,
+  defaultTaskSort: preferencesStore.taskSort
+});
+
+// Developer mode state
+const isDeveloper = computed(() => {
+  // Check if user is a developer (this could be based on email, role, etc.)
+  const devEmails = ['dev@example.com', 'admin@momentum.pro'];
+  return user.value && devEmails.includes(user.value.email);
+});
+
+const isDevMode = computed(() => {
+  return localStorage.getItem('dev_mode_user') !== null;
+});
+
+// Computed properties for user display
+const displayName = computed(() => {
+  return userProfile.value.display_name || user.value?.email?.split('@')[0] || 'User';
+});
+
+const userInitials = computed(() => {
+  if (userProfile.value.display_name) {
+    const names = userProfile.value.display_name.split(' ');
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[1][0]}`.toUpperCase();
+    }
+    return names[0][0].toUpperCase();
+  }
+  
+  if (user.value?.email) {
+    return user.value.email[0].toUpperCase();
+  }
+  
+  return 'U';
+});
+
+const avatarStyle = computed(() => {
+  if (profileImage.value) {
+    return {
+      backgroundImage: `url(${profileImage.value})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    };
+  }
+  
+  return {
+    backgroundColor: getAvatarColor(userInitials.value)
+  };
+});
+
+// Task statistics
+const totalTasks = computed(() => tasks.value?.length || 0);
+
+const completedTasks = computed(() => 
+  tasks.value?.filter(task => task.is_complete).length || 0
+);
+
+const incompleteTasks = computed(() => 
+  tasks.value?.filter(task => !task.is_complete).length || 0
+);
+
+const completionRate = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((completedTasks.value / totalTasks.value) * 100);
+});
+
+// Task importance statistics
+const highImportanceTasks = computed(() => 
+  tasks.value?.filter(task => task.importance === 'high').length || 0
+);
+
+const mediumImportanceTasks = computed(() => 
+  tasks.value?.filter(task => task.importance === 'medium' || !task.importance).length || 0
+);
+
+const lowImportanceTasks = computed(() => 
+  tasks.value?.filter(task => task.importance === 'low').length || 0
+);
+
+const highImportancePercentage = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((highImportanceTasks.value / totalTasks.value) * 100);
+});
+
+const mediumImportancePercentage = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((mediumImportanceTasks.value / totalTasks.value) * 100);
+});
+
+const lowImportancePercentage = computed(() => {
+  if (totalTasks.value === 0) return 0;
+  return Math.round((lowImportanceTasks.value / totalTasks.value) * 100);
+});
+
+// Recent tasks
+const recentTasks = computed(() => {
+  if (!tasks.value) return [];
+  
+  return [...tasks.value]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5);
+});
+
+// Load user data on mount
+onMounted(async () => {
+  try {
+    isLoading.value = true;
+    
+    // Fetch user if not already loaded
+    if (!user.value) {
+      await userStore.fetchUser();
+    }
+    
+    // Fetch tasks if not already loaded
+    if (user.value && (!tasks.value || tasks.value.length === 0)) {
+      await taskStore.fetchTasks();
+    }
+    
+    // Fetch user profile
+    if (user.value) {
+      await fetchUserProfile();
+    }
+    
+    // Load avatar if available
+    if (userProfile.value.avatar_url) {
+      await loadProfileImage(userProfile.value.avatar_url);
+    }
+  } catch (error) {
+    console.error('Error loading profile data:', error);
+    toastStore.error('Failed to load profile data. Please try again.');
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+// Watch for user changes
+watch(() => user.value, async (newUser) => {
+  if (newUser) {
+    await fetchUserProfile();
+  }
+}, { immediate: true });
+
+// Methods
+async function fetchUserProfile() {
+  try {
+    // First check if we have a profile in localStorage (for dev mode)
+    const savedProfile = localStorage.getItem('user_profile');
+    if (savedProfile) {
+      userProfile.value = JSON.parse(savedProfile);
+      return;
+    }
+    
+    // Otherwise fetch from Supabase
+    if (user.value) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.value.id)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        userProfile.value = data;
+        
+        // Cache in localStorage for faster access
+        localStorage.setItem('user_profile', JSON.stringify(data));
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    // Create a default profile if none exists
+    userProfile.value = {
+      display_name: user.value?.email?.split('@')[0] || '',
+      bio: '',
+      avatar_url: null
+    };
+  }
+}
+
+async function updateProfile() {
+  try {
+    isUpdating.value = true;
+    
+    // If in dev mode, just update localStorage
+    if (localStorage.getItem('dev_mode_user')) {
+      localStorage.setItem('user_profile', JSON.stringify(userProfile.value));
+      toastStore.success('Profile updated successfully!');
+      isUpdating.value = false;
+      return;
+    }
+    
+    // Otherwise update in Supabase
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.value.id,
+        display_name: userProfile.value.display_name,
+        bio: userProfile.value.bio,
+        avatar_url: userProfile.value.avatar_url,
+        updated_at: new Date().toISOString()
+      });
+    
+    if (error) throw error;
+    
+    // Update localStorage cache
+    localStorage.setItem('user_profile', JSON.stringify(userProfile.value));
+    
+    toastStore.success('Profile updated successfully!');
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    toastStore.error('Failed to update profile. Please try again.');
+  } finally {
+    isUpdating.value = false;
+  }
+}
+
+async function changePassword() {
+  try {
+    isPasswordChanging.value = true;
+    
+    // Validate passwords
+    if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+      toastStore.error('New passwords do not match');
+      return;
+    }
+    
+    // Update password in Supabase
+    const { error } = await supabase.auth.updateUser({
+      password: passwordForm.value.newPassword
+    });
+    
+    if (error) throw error;
+    
+    // Reset form and close modal
+    passwordForm.value = {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    };
+    
+    showPasswordModal.value = false;
+    toastStore.success('Password changed successfully!');
+  } catch (error) {
+    console.error('Error changing password:', error);
+    toastStore.error(error.message || 'Failed to change password. Please try again.');
+  } finally {
+    isPasswordChanging.value = false;
+  }
+}
+
+async function deleteAccount() {
+  try {
+    if (!confirmDeleteAccount.value) return;
+    
+    isDeleting.value = true;
+    
+    // If in dev mode, just clear localStorage
+    if (localStorage.getItem('dev_mode_user')) {
+      localStorage.clear();
+      await userStore.signOut();
+      router.push('/auth');
+      return;
+    }
+    
+    // Delete user account in Supabase
+    const { error } = await supabase.auth.admin.deleteUser(user.value.id);
+    
+    if (error) throw error;
+    
+    // Sign out and redirect to auth page
+    await userStore.signOut();
+    router.push('/auth');
+    toastStore.success('Your account has been deleted.');
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    toastStore.error(error.message || 'Failed to delete account. Please try again.');
+  } finally {
+    isDeleting.value = false;
+    showDeleteAccountModal.value = false;
+  }
+}
+
+function triggerFileInput() {
+  fileInput.value.click();
+}
+
+async function handleFileUpload(event) {
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toastStore.error('Please select an image file');
+      return;
+    }
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toastStore.error('Image size should be less than 2MB');
+      return;
+    }
+    
+    // Show loading state
+    isUpdating.value = true;
+    
+    // If in dev mode, just store in localStorage
+    if (localStorage.getItem('dev_mode_user')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        profileImage.value = e.target.result;
+        userProfile.value.avatar_url = e.target.result;
+        localStorage.setItem('user_profile', JSON.stringify(userProfile.value));
+        toastStore.success('Profile picture updated!');
+        isUpdating.value = false;
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+    
+    // Upload to Supabase Storage
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.value.id}-${Date.now()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
+    
+    if (uploadError) throw uploadError;
+    
+    // Get public URL
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    
+    // Update profile with new avatar URL
+    userProfile.value.avatar_url = data.publicUrl;
+    await updateProfile();
+    
+    // Load the new image
+    await loadProfileImage(data.publicUrl);
+    
+    toastStore.success('Profile picture updated!');
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    toastStore.error('Failed to upload profile picture. Please try again.');
+  } finally {
+    isUpdating.value = false;
+    // Reset file input
+    if (fileInput.value) {
+      fileInput.value.value = '';
+    }
+  }
+}
+
+async function loadProfileImage(url) {
+  try {
+    if (!url) return;
+    
+    // If it's a data URL (from localStorage), use it directly
+    if (url.startsWith('data:')) {
+      profileImage.value = url;
+      return;
+    }
+    
+    // Otherwise load from Supabase
+    profileImage.value = url;
+  } catch (error) {
+    console.error('Error loading profile image:', error);
+    profileImage.value = null;
+  }
+}
+
+function setTheme(theme) {
+  userPreferences.value.theme = theme;
+  preferencesStore.setTheme(theme);
+  savePreferences();
+}
+
+function savePreferences() {
+  preferencesStore.setTaskFilter(userPreferences.value.defaultTaskFilter);
+  preferencesStore.setTaskSort(userPreferences.value.defaultTaskSort);
+  toastStore.success('Preferences saved!');
+}
+
+function toggleDevMode() {
+  if (isDevMode.value) {
+    localStorage.removeItem('dev_mode_user');
+    toastStore.success('Development mode disabled');
+  } else {
+    localStorage.setItem('dev_mode_user', 'true');
+    toastStore.success('Development mode enabled');
+  }
+}
+
+function getAccountType() {
+  if (isDeveloper.value) return 'Developer Account';
+  
+  if (user.value?.app_metadata?.provider === 'google') {
+    return 'Google Account';
+  } else if (user.value?.app_metadata?.provider === 'github') {
+    return 'GitHub Account';
+  }
+  
+  return 'Email Account';
+}
+
+function getAvatarColor(initials) {
+  // Generate a consistent color based on initials
+  const charCodes = initials.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hue = charCodes % 360;
+  return `hsl(${hue}, 70%, 60%)`;
+}
+
+function formatDate(dateString, includeYear = false) {
+  if (!dateString) return null;
+  
+  const date = new Date(dateString);
+  const options = {
+    month: 'short',
+    day: 'numeric'
+  };
+  
+  if (includeYear) {
+    options.year = 'numeric';
+  }
+  
+  return date.toLocaleDateString('en-US', options);
+}
+</script>
+
+<style scoped>
+.profile-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.back-btn:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.profile-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: var(--color-text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(var(--color-accent-primary-rgb), 0.3);
+  border-radius: 50%;
+  border-top-color: var(--color-accent-primary);
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 992px) {
+  .profile-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.profile-card, .stats-card {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-avatar-container {
+  position: relative;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: var(--color-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+}
+
+.avatar-upload-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.avatar-upload-btn:hover {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 80%, black);
+}
+
+.file-input {
+  display: none;
+}
+
+.profile-name-section h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+}
+
+.member-since {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.profile-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.tab-btn.active {
+  background-color: var(--color-accent-primary);
+  color: white;
+}
+
+.tab-content {
+  margin-top: 1rem;
+}
+
+.tab-content h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1.2rem;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.info-item label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.info-item p {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.action-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background-color: var(--color-border);
+}
+
+.action-btn.danger {
+  background-color: rgba(var(--color-danger-rgb), 0.1);
+  color: var(--color-danger);
+}
+
+.action-btn.danger:hover {
+  background-color: rgba(var(--color-danger-rgb), 0.2);
+}
+
+.edit-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper input,
+.input-wrapper textarea,
+.form-group select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-wrapper input:focus,
+.input-wrapper textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb), 0.2);
+}
+
+.input-wrapper textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.submit-btn {
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 80%, black);
+}
+
+.submit-btn:disabled {
+  background-color: var(--color-light-gray);
+  cursor: not-allowed;
+}
+
+.preference-section {
+  margin-bottom: 2rem;
+}
+
+.preference-section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1.1rem;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.theme-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-bg-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-btn.active {
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb), 0.2);
+}
+
+.theme-icon {
+  font-size: 1.5rem;
+}
+
+.stats-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stats-card h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-text-primary);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.stat-card {
+  background-color: var(--color-bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-accent-primary);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.task-chart {
+  background-color: var(--color-bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.task-chart h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chart-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.chart-bar {
+  height: 12px;
+  border-radius: 6px;
+  transition: width 0.5s ease-out;
+}
+
+.chart-bar.importance-high {
+  background-color: var(--color-danger);
+}
+
+.chart-bar.importance-medium {
+  background-color: var(--color-warning);
+}
+
+.chart-bar.importance-low {
+  background-color: var(--color-info);
+}
+
+.chart-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.activity-summary {
+  background-color: var(--color-bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.activity-summary h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+
+.no-activity {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 1rem 0;
+}
+
+.activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.activity-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.activity-icon.completed {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.activity-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-title {
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.activity-date {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.warning-text {
+  color: var(--color-danger);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.password-form,
+.delete-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.confirmation-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.confirmation-checkbox input {
+  margin-top: 0.3rem;
+}
+
+.confirmation-checkbox label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.confirm-btn,
+.danger-btn,
+.cancel-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.confirm-btn {
+  background-color: var(--color-accent-primary);
+  color: white;
+}
+
+.danger-btn {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.danger-btn:disabled {
+  background-color: var(--color-light-gray);
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.loading-text {
+  display: inline-block;
+}
+
+.dot-animation::after {
+  content: '...';
+  animation: dots 1.5s infinite;
+  display: inline-block;
+  width: 1.5rem;
+  text-align: left;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .back-btn {
+    align-self: flex-start;
+  }
+  
+  .profile-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

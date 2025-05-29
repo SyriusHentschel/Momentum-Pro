@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Momentum Pro (CDN Version)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-router@4"></script>
+    <style>
+        :root {
+            --color-bg-primary: #121212;
+            --color-bg-secondary: #1e1e1e;
+            --color-text-primary: #e0e0e0;
+            --color-text-secondary: #c0c0c0;
+            --color-accent-primary: #8a2be2;
+            --color-accent-secondary: #ffd700;
+            --color-border: #444444;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+        }
+        
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-link {
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--color-accent-primary);
+            color: white;
+        }
+        
+        .card {
+            background-color: var(--color-bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button {
+            background-color: var(--color-accent-primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #7823c7;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .toast {
+            background-color: var(--color-bg-secondary);
+            color: var(--color-text-primary);
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s forwards;
+        }
+        
+        .toast.success {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .toast.error {
+            border-left: 4px solid #f44336;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- Toast Notifications -->
+            <div class="toast-container">
+                <div v-for="toast in toasts" :key="toast.id" class="toast" :class="toast.type">
+                    <span v-if="toast.type === 'success'">✅</span>
+                    <span v-else-if="toast.type === 'error'">❌</span>
+                    <span>{{ toast.message }}</span>
+                </div>
+            </div>
+            
+            <!-- Header -->
+            <header class="header">
+                <h1>Momentum Pro</h1>
+                <div class="nav-links">
+                    <router-link to="/" class="nav-link">Home</router-link>
+                    <router-link to="/test" class="nav-link">Test Page</router-link>
+                    <router-link to="/dev" class="nav-link">Dev Mode</router-link>
+                </div>
+            </header>
+            
+            <!-- Main Content -->
+            <router-view></router-view>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+        const { createRouter, createWebHistory } = VueRouter;
+        
+        // Toast Store
+        const useToastStore = () => {
+            const toasts = ref([]);
+            
+            const addToast = (message, type = 'info', duration = 3000) => {
+                const id = Date.now().toString();
+                const toast = { id, message, type };
+                toasts.value.push(toast);
+                
+                if (duration > 0) {
+                    setTimeout(() => {
+                        removeToast(id);
+                    }, duration);
+                }
+            };
+            
+            const removeToast = (id) => {
+                const index = toasts.value.findIndex(toast => toast.id === id);
+                if (index !== -1) {
+                    toasts.value.splice(index, 1);
+                }
+            };
+            
+            const success = (message) => addToast(message, 'success');
+            const error = (message) => addToast(message, 'error');
+            
+            return {
+                toasts,
+                addToast,
+                removeToast,
+                success,
+                error
+            };
+        };
+        
+        // Home Component
+        const Home = {
+            template: `
+                <div class="card">
+                    <h2>Welcome to Momentum Pro</h2>
+                    <p>This is a simplified CDN version of the app.</p>
+                    <button @click="showToast">Show Toast Notification</button>
+                </div>
+            `,
+            setup() {
+                const { success } = useToastStore();
+                
+                const showToast = () => {
+                    success('This is a test toast notification!');
+                };
+                
+                return {
+                    showToast
+                };
+            }
+        };
+        
+        // Test Page Component
+        const TestPage = {
+            template: `
+                <div class="card">
+                    <h2>Test Page</h2>
+                    <p>If you can see this page, Vue Router is working correctly.</p>
+                    <button @click="showToast">Show Test Toast</button>
+                </div>
+            `,
+            setup() {
+                const { success } = useToastStore();
+                
+                const showToast = () => {
+                    success('Test page toast notification!');
+                };
+                
+                return {
+                    showToast
+                };
+            }
+        };
+        
+        // Dev Mode Component
+        const DevMode = {
+            template: `
+                <div class="card">
+                    <h2>Development Mode</h2>
+                    <p>This page allows you to enable development mode for testing.</p>
+                    <button @click="enableDevMode">Enable Dev Mode</button>
+                    <div v-if="isDevModeEnabled" style="margin-top: 15px; color: #4CAF50;">
+                        ✅ Development mode is enabled!
+                    </div>
+                </div>
+            `,
+            setup() {
+                const { success } = useToastStore();
+                const isDevModeEnabled = ref(false);
+                
+                onMounted(() => {
+                    checkDevMode();
+                });
+                
+                const checkDevMode = () => {
+                    isDevModeEnabled.value = localStorage.getItem('dev_mode_user') !== null;
+                };
+                
+                const enableDevMode = () => {
+                    const devModeUser = {
+                        id: 'dev-user-123',
+                        email: 'dev@example.com',
+                        created_at: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('dev_mode_user', JSON.stringify(devModeUser));
+                    checkDevMode();
+                    success('Development mode enabled!');
+                };
+                
+                return {
+                    isDevModeEnabled,
+                    enableDevMode
+                };
+            }
+        };
+        
+        // Router Configuration
+        const routes = [
+            { path: '/', component: Home },
+            { path: '/test', component: TestPage },
+            { path: '/dev', component: DevMode }
+        ];
+        
+        const router = createRouter({
+            history: createWebHistory(),
+            routes
+        });
+        
+        // Create App
+        const app = createApp({
+            setup() {
+                const toastStore = useToastStore();
+                
+                return {
+                    toasts: toastStore.toasts
+                };
+            }
+        });
+        
+        app.use(router);
+        app.mount('#app');
+    </script>
+</body>
+</html>

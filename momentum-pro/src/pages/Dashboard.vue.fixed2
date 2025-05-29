@@ -1,0 +1,1193 @@
+<template>
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <h1>Momentum Pro</h1>
+      <div class="header-actions">
+        <router-link to="/profile" class="profile-btn">
+          <span class="profile-icon">👤</span>
+          <span class="btn-text">My Profile</span>
+        </router-link>
+        <button @click="handleSignOut" class="sign-out-btn">
+          <span class="sign-out-icon">🚪</span>
+          <span class="btn-text">Sign Out</span>
+        </button>
+      </div>
+    </header>
+    
+    <main class="dashboard-content">
+      <div class="dashboard-top-bar">
+        <h2>Welcome, {{ userDisplayName }}</h2>
+        <div class="view-toggle">
+          <router-link to="/" class="view-btn active">
+            <span class="view-icon">📋</span>
+            <span class="btn-text">List View</span>
+          </router-link>
+          <router-link to="/kanban" class="view-btn">
+            <span class="view-icon">📊</span>
+            <span class="btn-text">Kanban View</span>
+          </router-link>
+        </div>
+      </div>
+      
+      <!-- Old notification area removed - now using toast notifications -->
+      
+      <div class="task-form">
+        <h3>Add New Task</h3>
+        <div class="form-group">
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              v-model="newTaskTitle" 
+              placeholder="Task title" 
+              class="task-input"
+              maxlength="50"
+            />
+            <div class="char-counter" :class="{ 'near-limit': newTaskTitle.length > 40 }">
+              {{ newTaskTitle.length }}/50
+            </div>
+            <span class="input-focus-effect"></span>
+          </div>
+          
+          <div class="input-wrapper">
+            <textarea 
+              v-model="newTaskDescription" 
+              placeholder="Task description (optional)" 
+              class="task-textarea"
+              maxlength="200"
+            ></textarea>
+            <div class="char-counter" :class="{ 'near-limit': newTaskDescription.length > 160 }">
+              {{ newTaskDescription.length }}/200
+            </div>
+            <span class="input-focus-effect"></span>
+          </div>
+          
+          <div class="form-row">
+            <label for="task-importance">
+              <span class="label-icon">⚡</span>
+              Importance:
+            </label>
+            <select id="task-importance" v-model="newTaskImportance" class="importance-select">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          
+          <div class="form-row">
+            <label for="task-status">
+              <span class="label-icon">📋</span>
+              Status:
+            </label>
+            <select id="task-status" v-model="newTaskStatus" class="status-select">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Complete</option>
+            </select>
+          </div>
+          
+          <button 
+            @click="addTask" 
+            class="add-task-btn" 
+            :disabled="!newTaskTitle.trim() || taskStore.isLoading"
+          >
+            <span v-if="taskStore.isLoading && isAddingTask" class="loading-text">
+              <span class="dot-animation">Adding</span>
+            </span>
+            <span v-else class="btn-text">Add Task</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="tasks-container">
+        <div class="tasks-header">
+          <h3>Your Tasks</h3>
+          
+          <div class="task-controls">
+            <div class="filter-controls">
+              <label for="task-filter">Filter:</label>
+              <select id="task-filter" v-model="taskFilter" @change="savePreferences">
+                <option value="all">All Tasks</option>
+                <option value="complete">Completed</option>
+                <option value="incomplete">Incomplete</option>
+              </select>
+            </div>
+            
+            <div class="sort-controls">
+              <label for="task-sort">Sort By:</label>
+              <select id="task-sort" v-model="taskSort" @change="savePreferences">
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="importance">Importance</option>
+                <option value="alphabetical">Alphabetical</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div v-if="taskStore.isLoading && !isAddingTask" class="loading">
+          <div class="spinner"></div>
+          <p>Loading tasks...</p>
+        </div>
+        
+        <div v-else-if="tasks && tasks.length === 0" class="no-tasks">
+          You don't have any tasks yet. Add your first task above!
+        </div>
+        
+        <div v-else-if="filteredSortedTasks.length === 0" class="no-tasks">
+          No tasks match your current filter. Try changing your filter settings.
+        </div>
+        
+        <div v-else class="task-list">
+          <transition-group 
+            name="task-transition" 
+            tag="div" 
+            class="task-list-inner"
+          >
+            <div 
+              v-for="task in filteredSortedTasks" 
+              :key="task.id" 
+              class="task-card"
+              :class="[
+                { 'completed-task': task.is_complete },
+                `importance-${task.importance || 'medium'}`
+              ]"
+            >
+            <!-- Edit mode -->
+            <div v-if="editingTaskId === task.id" class="edit-mode">
+              <div class="input-wrapper">
+                <input 
+                  type="text" 
+                  v-model="editTaskForm.title" 
+                  class="edit-input"
+                  placeholder="Task title"
+                  maxlength="50"
+                />
+                <div class="char-counter" :class="{ 'near-limit': editTaskForm.title.length > 40 }">
+                  {{ editTaskForm.title.length }}/50
+                </div>
+                <span class="input-focus-effect"></span>
+              </div>
+              
+              <div class="input-wrapper">
+                <textarea 
+                  v-model="editTaskForm.description" 
+                  class="edit-textarea"
+                  placeholder="Task description"
+                  maxlength="200"
+                ></textarea>
+                <div class="char-counter" :class="{ 'near-limit': editTaskForm.description.length > 160 }">
+                  {{ editTaskForm.description.length }}/200
+                </div>
+                <span class="input-focus-effect"></span>
+              </div>
+              
+              <div class="form-row">
+                <label>
+                  <span class="label-icon">⚡</span>
+                  Importance:
+                </label>
+                <select v-model="editTaskForm.importance" class="importance-select">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              
+              <div class="form-row">
+                <label>
+                  <span class="label-icon">📋</span>
+                  Status:
+                </label>
+                <select v-model="editTaskForm.status" class="status-select">
+                  <option value="todo">To Do</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Complete</option>
+                </select>
+              </div>
+              
+              <div class="edit-actions">
+                <button @click="saveTaskEdit(task.id)" class="save-btn" :disabled="!editTaskForm.title.trim()">
+                  <span class="btn-text">Save</span>
+                </button>
+                <button @click="cancelEdit" class="cancel-btn">
+                  <span class="btn-text">Cancel</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- View mode -->
+            <div v-else>
+              <div class="task-header">
+                <div class="task-title-area">
+                  <h4 :class="{ 'completed': task.is_complete }">{{ task.title }}</h4>
+                  <span class="importance-badge" :class="`importance-${task.importance || 'medium'}`">
+                    {{ task.importance ? task.importance.charAt(0).toUpperCase() + task.importance.slice(1) : 'Medium' }}
+                  </span>
+                </div>
+                <div class="task-actions">
+                  <button @click="startEditTask(task)" class="edit-btn" title="Edit task">
+                    <span class="icon">✏️</span>
+                  </button>
+                  <button @click="toggleTaskStatus(task)" class="status-btn" :title="task.is_complete ? 'Mark as incomplete' : 'Mark as complete'">
+                    <span class="icon">{{ task.is_complete ? '↩️' : '✓' }}</span>
+                  </button>
+                  <button @click="confirmDeleteTask(task.id)" class="delete-btn" title="Delete task">
+                    <span class="icon">🗑️</span>
+                  </button>
+                </div>
+              </div>
+              <div class="task-content">
+                <div class="description-container">
+                  <p class="task-description" :class="{ 'expanded': expandedDescriptions[task.id] }">
+                    {{ task.description || 'No description' }}
+                  </p>
+                  <button 
+                    v-if="task.description && task.description.length > 100" 
+                    @click="toggleDescription(task.id)" 
+                    class="read-more-btn"
+                  >
+                    {{ expandedDescriptions[task.id] ? 'Show Less' : 'Read More' }}
+                  </button>
+                </div>
+                <div class="task-meta">
+                  <span>Created: {{ formatDate(task.created_at) }}</span>
+                </div>
+              </div>
+              
+              <!-- Task completion indicator -->
+              <div v-if="task.is_complete" class="completion-indicator">
+                <span class="completion-icon">✓</span>
+              </div>
+            </div>
+          </div>
+          </transition-group>
+        </div>
+      </div>
+    </main>
+    
+    <!-- Confirmation Modal -->
+    <div v-if="showDeleteConfirm" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Confirm Delete</h3>
+        <p>Are you sure you want to delete this task? This action cannot be undone.</p>
+        <div class="modal-actions">
+          <button @click="deleteTask(taskToDelete)" class="confirm-btn">Yes, Delete</button>
+          <button @click="cancelDelete" class="cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useUserStore } from '../store/user';
+import { useTaskStore } from '../store/task';
+import { useToastStore } from '../store/toast';
+import { usePreferencesStore } from '../store/preferences';
+import { supabase } from '../supabase';
+
+const router = useRouter();
+const userStore = useUserStore();
+const taskStore = useTaskStore();
+const toastStore = useToastStore();
+const preferencesStore = usePreferencesStore();
+const { user } = storeToRefs(userStore);
+const { tasks, isLoading } = storeToRefs(taskStore);
+
+// Task filtering and sorting
+const taskFilter = ref(preferencesStore.taskFilter);
+const taskSort = ref(preferencesStore.taskSort);
+
+// Task form state
+const newTaskTitle = ref('');
+const newTaskDescription = ref('');
+const newTaskImportance = ref('medium');
+const newTaskStatus = ref('todo');
+const isAddingTask = ref(false);
+
+// Edit task state
+const editingTaskId = ref(null);
+const editTaskForm = ref({
+  title: '',
+  description: '',
+  importance: 'medium',
+  status: 'todo'
+});
+
+// Delete confirmation state
+const showDeleteConfirm = ref(false);
+const taskToDelete = ref(null);
+
+// Description expansion state
+const expandedDescriptions = ref({});
+
+// Get user display name from profile or fallback to email
+const userDisplayName = computed(() => {
+  // Try to get user profile from localStorage
+  const savedProfile = localStorage.getItem('user_profile');
+  if (savedProfile) {
+    const userProfile = JSON.parse(savedProfile);
+    if (userProfile.display_name) {
+      return userProfile.display_name;
+    }
+  }
+  
+  // Fallback to email or default
+  return user.value?.email || 'User';
+});
+
+// Computed property for filtered and sorted tasks
+const filteredSortedTasks = computed(() => {
+  if (!tasks.value) return [];
+  
+  // First, filter the tasks
+  let result = [...tasks.value];
+  
+  if (taskFilter.value === 'complete') {
+    result = result.filter(task => task.is_complete);
+  } else if (taskFilter.value === 'incomplete') {
+    result = result.filter(task => !task.is_complete);
+  }
+  
+  // Then, sort the tasks
+  switch (taskSort.value) {
+    case 'date-desc':
+      result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      break;
+    case 'date-asc':
+      result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      break;
+    case 'importance':
+      // Custom importance sort: high -> medium -> low
+      const importanceOrder = { high: 1, medium: 2, low: 3 };
+      result.sort((a, b) => {
+        const aImportance = a.importance || 'medium';
+        const bImportance = b.importance || 'medium';
+        return importanceOrder[aImportance] - importanceOrder[bImportance];
+      });
+      break;
+    case 'alphabetical':
+      result.sort((a, b) => a.title.localeCompare(b.title));
+      break;
+  }
+  
+  return result;
+});
+
+onMounted(async () => {
+  try {
+    // Fetch user if not already loaded
+    if (!user.value) {
+      await userStore.fetchUser();
+    }
+    
+    // Fetch tasks
+    if (user.value) {
+      await taskStore.fetchTasks();
+    }
+  } catch (error) {
+    console.error('Error loading data:', error);
+    toastStore.error('Failed to load tasks. Please try again.');
+  }
+});
+
+// Save user preferences
+const savePreferences = () => {
+  preferencesStore.setTaskFilter(taskFilter.value);
+  preferencesStore.setTaskSort(taskSort.value);
+};
+
+// Handle sign out
+const handleSignOut = async () => {
+  try {
+    await userStore.signOut();
+    router.push('/auth');
+  } catch (error) {
+    console.error('Sign out error:', error);
+    toastStore.error('Failed to sign out. Please try again.');
+  }
+};
+
+// Add a new task
+const addTask = async () => {
+  if (!newTaskTitle.value.trim()) return;
+  
+  try {
+    isAddingTask.value = true;
+    await taskStore.createTask(
+      newTaskTitle.value.trim(),
+      newTaskDescription.value.trim(),
+      user.value.id,
+      newTaskImportance.value,
+      newTaskStatus.value
+    );
+    
+    // Clear form
+    newTaskTitle.value = '';
+    newTaskDescription.value = '';
+    newTaskImportance.value = 'medium';
+    newTaskStatus.value = 'todo';
+    
+    toastStore.success('Task added successfully!');
+  } catch (error) {
+    console.error('Error adding task:', error);
+    toastStore.error('Failed to add task. Please try again.');
+  } finally {
+    isAddingTask.value = false;
+  }
+};
+
+// Start editing a task
+const startEditTask = (task) => {
+  editingTaskId.value = task.id;
+  editTaskForm.value = {
+    title: task.title,
+    description: task.description || '',
+    importance: task.importance || 'medium',
+    status: task.status || (task.is_complete ? 'done' : 'todo')
+  };
+};
+
+// Save task edits
+const saveTaskEdit = async (taskId) => {
+  if (!editTaskForm.value.title.trim()) return;
+  
+  try {
+    const updates = {
+      title: editTaskForm.value.title.trim(),
+      description: editTaskForm.value.description.trim(),
+      importance: editTaskForm.value.importance,
+      is_complete: editTaskForm.value.status === 'done'
+    };
+    
+    // Only include status for dev mode tasks
+    if (localStorage.getItem('dev_mode_user')) {
+      updates.status = editTaskForm.value.status;
+    }
+    
+    await taskStore.updateTask(taskId, updates);
+    editingTaskId.value = null;
+    toastStore.success('Task updated successfully!');
+  } catch (error) {
+    console.error('Error updating task:', error);
+    toastStore.error('Failed to update task. Please try again.');
+  }
+};
+
+// Cancel editing
+const cancelEdit = () => {
+  editingTaskId.value = null;
+};
+
+// Toggle task completion status
+const toggleTaskStatus = async (task) => {
+  try {
+    const updates = { is_complete: !task.is_complete };
+    
+    // If the task is being marked as complete and it has a status, update it to 'done'
+    if (!task.is_complete && localStorage.getItem('dev_mode_user')) {
+      updates.status = 'done';
+    }
+    
+    await taskStore.updateTask(task.id, updates);
+    toastStore.success(task.is_complete ? 'Task marked as incomplete' : 'Task marked as complete');
+  } catch (error) {
+    console.error('Error toggling task status:', error);
+    toastStore.error('Failed to update task status. Please try again.');
+  }
+};
+
+// Confirm task deletion
+const confirmDeleteTask = (taskId) => {
+  taskToDelete.value = taskId;
+  showDeleteConfirm.value = true;
+};
+
+// Delete a task
+const deleteTask = async (taskId) => {
+  try {
+    await taskStore.deleteTask(taskId);
+    showDeleteConfirm.value = false;
+    taskToDelete.value = null;
+    toastStore.success('Task deleted successfully!');
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    toastStore.error('Failed to delete task. Please try again.');
+  }
+};
+
+// Cancel delete
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  taskToDelete.value = null;
+};
+
+// Toggle description expansion
+const toggleDescription = (taskId) => {
+  expandedDescriptions.value = {
+    ...expandedDescriptions.value,
+    [taskId]: !expandedDescriptions.value[taskId]
+  };
+};
+
+// Format date for display
+const formatDate = (dateString) => {
+  if (!dateString) return 'Unknown';
+  
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+</script>
+
+<style scoped>
+.dashboard-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.profile-btn, .sign-out-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.profile-btn:hover, .sign-out-btn:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.profile-icon, .sign-out-icon {
+  font-size: 1.2rem;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dashboard-top-bar h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  background-color: var(--color-bg-tertiary);
+  padding: 0.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.view-btn:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.view-btn.active {
+  background-color: var(--color-accent-primary);
+  color: white;
+}
+
+.view-icon {
+  font-size: 1.2rem;
+}
+
+.task-form {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.task-form h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+  font-size: 1.2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.task-input, .task-textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.task-input:focus, .task-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb), 0.2);
+}
+
+.task-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.char-counter {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+}
+
+.char-counter.near-limit {
+  color: #e74c3c;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.label-icon {
+  font-size: 1.2rem;
+}
+
+.importance-select, .status-select {
+  padding: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.importance-select:focus, .status-select:focus {
+  outline: none;
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb), 0.2);
+}
+
+.add-task-btn {
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  margin-top: 0.5rem;
+}
+
+.add-task-btn:hover {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 80%, black);
+}
+
+.add-task-btn:disabled {
+  background-color: var(--color-light-gray);
+  cursor: not-allowed;
+}
+
+.tasks-container {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tasks-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-text-primary);
+}
+
+.task-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-controls, .sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-controls label, .sort-controls label {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.filter-controls select, .sort-controls select {
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(var(--color-accent-primary-rgb), 0.3);
+  border-radius: 50%;
+  border-top-color: var(--color-accent-primary);
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.no-tasks {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-tertiary);
+  border-radius: 4px;
+}
+
+.task-list {
+  margin-top: 1rem;
+}
+
+.task-list-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.task-card {
+  background-color: var(--color-bg-tertiary);
+  border-radius: 6px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.task-card.completed-task {
+  background-color: color-mix(in srgb, var(--color-bg-tertiary) 95%, var(--color-success));
+  border-left: 3px solid var(--color-success);
+}
+
+.task-card.importance-high {
+  border-left: 3px solid var(--color-danger);
+}
+
+.task-card.importance-medium {
+  border-left: 3px solid var(--color-warning);
+}
+
+.task-card.importance-low {
+  border-left: 3px solid var(--color-info);
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.task-title-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.task-title-area h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+}
+
+.task-title-area h4.completed {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+
+.importance-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.importance-badge.importance-high {
+  background-color: rgba(var(--color-danger-rgb), 0.1);
+  color: var(--color-danger);
+}
+
+.importance-badge.importance-medium {
+  background-color: rgba(var(--color-warning-rgb), 0.1);
+  color: var(--color-warning);
+}
+
+.importance-badge.importance-low {
+  background-color: rgba(var(--color-info-rgb), 0.1);
+  color: var(--color-info);
+}
+
+.task-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.task-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-actions button:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.task-description {
+  margin: 0.5rem 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  transition: all 0.3s ease;
+}
+
+.task-description.expanded {
+  -webkit-line-clamp: unset;
+  max-height: none;
+}
+
+.read-more-btn {
+  background: none;
+  border: none;
+  color: var(--color-accent-primary);
+  padding: 0;
+  margin-top: 0.3rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.task-meta {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.edit-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.edit-input, .edit-textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+
+.edit-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.save-btn, .cancel-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.save-btn {
+  background-color: var(--color-accent-primary);
+  color: white;
+}
+
+.save-btn:disabled {
+  background-color: var(--color-light-gray);
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.completion-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: var(--color-success);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--color-bg-secondary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.confirm-btn, .cancel-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.confirm-btn {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.cancel-btn {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.loading-text {
+  display: inline-block;
+}
+
+.dot-animation::after {
+  content: '...';
+  animation: dots 1.5s infinite;
+  display: inline-block;
+  width: 1.5rem;
+  text-align: left;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+/* Task transition animations */
+.task-transition-enter-active,
+.task-transition-leave-active {
+  transition: all 0.3s ease;
+}
+
+.task-transition-enter-from,
+.task-transition-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* Responsive styles */
+@media (min-width: 768px) {
+  .form-row {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .form-row label {
+    width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .dashboard-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .view-toggle {
+    width: 100%;
+  }
+  
+  .tasks-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .task-controls {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .filter-controls, .sort-controls {
+    width: 100%;
+  }
+  
+  .filter-controls select,
+  .sort-controls select {
+    flex-grow: 1;
+  }
+}
+</style>
