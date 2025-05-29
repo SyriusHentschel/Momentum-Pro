@@ -137,3 +137,16 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Vue.js team for the amazing framework
 - Supabase team for the powerful backend platform
 - All contributors who have helped shape this project
+
+---
+
+## Contact & Support
+
+For questions or support, please contact us:
+- Email: support@momentumpro.com
+- Phone: (555) 123-4567
+- Website: [www.momentumpro.com](https://www.momentumpro.com)
+
+---
+
+Copyright © 2025 Momentum Pro. All rights reserved.
