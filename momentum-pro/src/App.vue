@@ -11,6 +11,7 @@
     <div class="app-content">
       <router-view /> <!-- your routes will load inside of these tags -->
       <ToastNotification />
+      <Footer />
     </div>
   </div>
 </template>
@@ -22,6 +23,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from './store/user.js'
 import { usePreferencesStore } from './store/preferences.js'
 import ToastNotification from './components/ToastNotification.vue'
+import Footer from './components/Footer.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -85,6 +87,8 @@ body {
   min-height: 100vh;
   width: 100%;
   z-index: 10; /* Ensure content is above background */
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {
