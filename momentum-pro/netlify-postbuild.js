@@ -35,6 +35,24 @@ if (fs.existsSync(publicRedirectsPath)) {
   console.log('✅ _redirects file copied from public directory');
 }
 
+// Copy _headers from public directory if it exists
+const publicHeadersPath = path.join(__dirname, 'public', '_headers');
+const distHeadersPath = path.join(distDir, '_headers');
+if (fs.existsSync(publicHeadersPath)) {
+  console.log('Copying _headers from public directory...');
+  fs.copyFileSync(publicHeadersPath, distHeadersPath);
+  console.log('✅ _headers file copied from public directory');
+} else {
+  // Create a default _headers file
+  console.log('Creating default _headers file...');
+  fs.writeFileSync(
+    distHeadersPath,
+    '/*\n  Cache-Control: no-cache, no-store, must-revalidate\n  Pragma: no-cache\n  Expires: 0',
+    'utf8'
+  );
+  console.log('✅ Default _headers file created');
+}
+
 // Verify index.html exists
 if (fs.existsSync(path.join(distDir, 'index.html'))) {
   console.log('✅ index.html exists');
