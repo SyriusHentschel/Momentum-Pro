@@ -4,6 +4,7 @@ import Auth from '../pages/Auth.vue';
 import AuthCallback from '../pages/AuthCallback.vue';
 import ProfilePage from '../pages/ProfilePage.vue';
 import KanbanPage from '../pages/KanbanPage.vue';
+import VerificationPage from '../pages/VerificationPage.vue';
 import { supabase } from '../supabase';
 
 const routes = [
@@ -35,6 +36,12 @@ const routes = [
     path: '/auth/callback',
     name: 'AuthCallback',
     component: AuthCallback,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/verify',
+    name: 'Verification',
+    component: VerificationPage,
     meta: { requiresAuth: false }
   },
   // Catch-all route for the auth callback to handle any variations

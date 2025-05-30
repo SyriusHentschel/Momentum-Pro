@@ -35,6 +35,17 @@ if (fs.existsSync(publicRedirectsPath)) {
   console.log('✅ _redirects file copied from public directory');
 }
 
+// Copy build-verification.html from public directory if it exists
+const publicVerificationPath = path.join(__dirname, 'public', 'build-verification.html');
+const distVerificationPath = path.join(distDir, 'build-verification.html');
+if (fs.existsSync(publicVerificationPath)) {
+  console.log('Copying build-verification.html from public directory...');
+  fs.copyFileSync(publicVerificationPath, distVerificationPath);
+  console.log('✅ build-verification.html file copied from public directory');
+} else {
+  console.error('❌ build-verification.html not found in public directory!');
+}
+
 // Copy _headers from public directory if it exists
 const publicHeadersPath = path.join(__dirname, 'public', '_headers');
 const distHeadersPath = path.join(distDir, '_headers');

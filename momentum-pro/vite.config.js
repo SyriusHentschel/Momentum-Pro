@@ -54,6 +54,25 @@ Node Version: ${process.version}
           'utf8'
         )
         
+        // Copy verification files from public directory
+        const publicFiles = [
+          'build-verification.html',
+          'static-verification.html'
+        ];
+        
+        publicFiles.forEach(file => {
+          const sourcePath = path.join(__dirname, 'public', file);
+          const destPath = path.join(distDir, file);
+          
+          if (fs.existsSync(sourcePath)) {
+            console.log(`Copying ${file} from public directory...`);
+            fs.copyFileSync(sourcePath, destPath);
+            console.log(`✓ ${file} copied to dist folder`);
+          } else {
+            console.log(`⚠️ ${file} not found in public directory`);
+          }
+        })
+        
         // Create a cache-busting file that Netlify will recognize
         fs.writeFileSync(
           path.join(distDir, '_headers'),
