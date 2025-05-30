@@ -1,18 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
-
-// Get environment variables with fallback values
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cdskvspoucbfwnhiofoy.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc2t2c3BvdWNiZnduaGlvZm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MzYyNDgsImV4cCI6MjA2MDMxMjI0OH0.I7TKi8sjt5iXVa64BqWA3ASVPCsDWWJwAWUGQ_6hfAg'
-const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || 'https://momentum-testt.netlify.app/auth/callback'
+import { SUPABASE_CONFIG, APP_CONFIG } from './config'
 
 // Log the values to help with debugging
-console.log('Environment:', import.meta.env.MODE)
-console.log('Supabase URL:', supabaseUrl)
-console.log('Supabase Anon Key:', supabaseAnonKey ? 'Key is defined' : 'Key is undefined')
-console.log('Auth Redirect URL:', authRedirectUrl)
+console.log('Environment:', APP_CONFIG.mode)
+console.log('Build ID:', APP_CONFIG.buildId)
+console.log('Supabase URL:', SUPABASE_CONFIG.url)
+console.log('Supabase Anon Key:', SUPABASE_CONFIG.anonKey ? 'Key is defined' : 'Key is undefined')
+console.log('Auth Redirect URL:', SUPABASE_CONFIG.redirectUrl)
 
 // Export the redirect URL for use in other components
-export const REDIRECT_URL = authRedirectUrl
+export const REDIRECT_URL = SUPABASE_CONFIG.redirectUrl
 
 // Create and export the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey)
