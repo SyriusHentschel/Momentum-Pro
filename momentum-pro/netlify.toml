@@ -4,6 +4,8 @@
   publish = "dist"
   command = "npm run netlify-build"
   ignore_warnings = true
+  # Force clean build every time
+  ignore_cached = true
   
 [build.environment]
   # Ensure Node.js version is compatible
