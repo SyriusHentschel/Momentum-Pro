@@ -3,10 +3,14 @@
 [build]
   publish = "dist"
   command = "npm run build"
+  ignore_warnings = true
   
 [build.environment]
   # Ensure Node.js version is compatible
   NODE_VERSION = "16"
+  # Force clean build
+  NETLIFY_USE_YARN = "false"
+  NETLIFY_YARN_WORKSPACES = "false"
 
 # Ensure all routes are handled by the Vue Router
 [[redirects]]
@@ -14,6 +18,13 @@
   to = "/index.html"
   status = 200
   force = true
+
+# Disable cache for HTML and root files
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Pragma = "no-cache"
 
 # Add cache control for assets
 [[headers]]
