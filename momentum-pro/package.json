@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build --emptyOutDir && node netlify-postbuild.js",
     "preview": "vite preview",
-    "netlify-build": "npm run build"
+    "netlify-build": "rm -rf dist && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
