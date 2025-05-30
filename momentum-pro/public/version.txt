@@ -1,0 +1,4 @@
+Version: 1.0.0
+Build Date: 2025-05-30
+Environment: Production
+Supabase Integration: Enabled

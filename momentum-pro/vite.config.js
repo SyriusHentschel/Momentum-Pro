@@ -1,11 +1,21 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import fs from 'fs'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '')
+  
+  console.log('Building with environment variables:')
+  console.log('VITE_SUPABASE_URL:', env.VITE_SUPABASE_URL ? 'Set' : 'Not set')
+  console.log('VITE_SUPABASE_ANON_KEY:', env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not set')
+  console.log('VITE_AUTH_REDIRECT_URL:', env.VITE_AUTH_REDIRECT_URL ? 'Set' : 'Not set')
+  
+  return {
   plugins: [
     vue(),
     {
@@ -25,12 +35,37 @@ export default defineConfig({
         }
         
         // Create a version marker file to verify deployment
+        const buildTimestamp = new Date().getTime();
         fs.writeFileSync(
           path.join(distDir, 'version-marker.txt'),
-          `Version: ${new Date().toISOString()}\nDeployed: ${new Date().toString()}`,
+          `Version: ${buildTimestamp}\nDeployed: ${new Date().toString()}\nCommit: ${process.env.COMMIT_REF || 'local-build'}`,
           'utf8'
         )
-        console.log('✓ Version marker file created')
+        
+        // Create an environment check file
+        fs.writeFileSync(
+          path.join(distDir, 'env-check.txt'),
+          `Build Time: ${new Date().toString()}
+Supabase URL: ${process.env.VITE_SUPABASE_URL ? 'Set' : 'Not set'}
+Supabase Anon Key: ${process.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not set'}
+Auth Redirect URL: ${process.env.VITE_AUTH_REDIRECT_URL ? 'Set' : 'Not set'}
+Node Version: ${process.version}
+`,
+          'utf8'
+        )
+        
+        // Create a cache-busting file that Netlify will recognize
+        fs.writeFileSync(
+          path.join(distDir, '_headers'),
+          `/*
+  Cache-Control: public, max-age=0, must-revalidate
+  
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+`,
+          'utf8'
+        )
+        console.log('✓ Version marker and cache headers created')
         
         // Ensure cleanup.html and reset.html redirect to the main app
         const redirectHtml = `<!DOCTYPE html>

@@ -1,6 +1,6 @@
 // /store/user.js
 import { defineStore } from 'pinia';
-import { supabase } from '../supabase';
+import { supabase, REDIRECT_URL } from '../supabase';
 import { useToastStore } from './toast';
 
 // Utility function for handling authentication errors
@@ -53,9 +53,8 @@ export const useUserStore = defineStore('user', {
       const toastStore = useToastStore();
       
       try {
-        // Get redirect URL from environment variable or use default
-        const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || 
-                           window.location.origin + '/auth/callback';
+        // Use the exported redirect URL from supabase.js
+        const redirectUrl = REDIRECT_URL;
         
         // Standard Supabase signup with email confirmation
         const { data, error } = await supabase.auth.signUp({
@@ -121,9 +120,8 @@ export const useUserStore = defineStore('user', {
       const toastStore = useToastStore();
       
       try {
-        // Get redirect URL from environment variable or use default
-        const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || 
-                           window.location.origin + '/auth/callback';
+        // Use the exported redirect URL from supabase.js
+        const redirectUrl = REDIRECT_URL;
         
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
@@ -154,9 +152,8 @@ export const useUserStore = defineStore('user', {
       const toastStore = useToastStore();
       
       try {
-        // Get redirect URL from environment variable or use default
-        const redirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || 
-                           window.location.origin + '/auth/callback';
+        // Use the exported redirect URL from supabase.js
+        const redirectUrl = REDIRECT_URL;
         
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',

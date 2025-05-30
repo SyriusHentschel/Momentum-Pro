@@ -2,7 +2,7 @@
 
 [build]
   publish = "dist"
-  command = "npm run build"
+  command = "npm run netlify-build"
   ignore_warnings = true
   
 [build.environment]
@@ -11,6 +11,10 @@
   # Force clean build
   NETLIFY_USE_YARN = "false"
   NETLIFY_YARN_WORKSPACES = "false"
+  # Supabase environment variables
+  VITE_SUPABASE_URL = "https://cdskvspoucbfwnhiofoy.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc2t2c3BvdWNiZnduaGlvZm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MzYyNDgsImV4cCI6MjA2MDMxMjI0OH0.I7TKi8sjt5iXVa64BqWA3ASVPCsDWWJwAWUGQ_6hfAg"
+  VITE_AUTH_REDIRECT_URL = "https://momentum-testt.netlify.app/auth/callback"
 
 # Ensure all routes are handled by the Vue Router
 [[redirects]]
