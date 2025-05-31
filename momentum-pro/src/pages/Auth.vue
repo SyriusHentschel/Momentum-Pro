@@ -1,7 +1,7 @@
 <template>
   <div class="auth-container">
     <div class="auth-card">
-      <h1 class="app-title">Momentum Pro</h1>
+      <h1 class="app-title gradient-text purple-gold">Momentum Pro</h1>
       
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
@@ -266,6 +266,11 @@ const handleGithubSignIn = async () => {
   position: relative;
   overflow: hidden;
   z-index: 10; /* Ensure it's above the background but doesn't create its own stacking context */
+  
+  /* Use CSS variables for transitions to maintain consistency */
+  --auth-transition-fast: 0.2s ease;
+  --auth-transition-medium: 0.3s ease;
+  --auth-transition-slow: 0.5s ease;
 }
 
 @keyframes slowRotate {
@@ -327,13 +332,9 @@ const handleGithubSignIn = async () => {
   margin-bottom: 1.5rem;
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(90deg, var(--color-purple), var(--color-gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-fill-color: transparent;
-  text-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
   position: relative;
+  /* Filter for glow effect */
+  filter: drop-shadow(0 0 6px rgba(var(--color-purple-rgb, 138, 43, 226), 0.3));
 }
 
 @media (max-width: 768px) {
@@ -384,7 +385,7 @@ label {
   color: var(--color-text-secondary);
   font-size: 0.95rem;
   letter-spacing: 0.5px;
-  transition: all 0.3s;
+  transition: all var(--auth-transition-medium);
 }
 
 input {
@@ -395,13 +396,13 @@ input {
   font-size: 1rem;
   color: var(--color-text-primary);
   background-color: var(--color-bg-tertiary);
-  transition: all 0.3s;
+  transition: all var(--auth-transition-medium);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 input:focus {
   border-color: var(--color-accent-primary);
-  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2), inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb, 138, 43, 226), 0.2), inset 0 1px 3px rgba(0, 0, 0, 0.1);
   outline: none;
 }
 
@@ -415,9 +416,9 @@ input:focus {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--auth-transition-medium);
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3);
+  box-shadow: 0 4px 10px rgba(var(--color-accent-primary-rgb, 138, 43, 226), 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -442,13 +443,13 @@ input:focus {
     rgba(255, 255, 255, 0.2),
     transparent
   );
-  transition: all 0.5s;
+  transition: all var(--auth-transition-slow);
 }
 
 .submit-btn:hover {
   background-color: var(--color-purple-dark);
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(138, 43, 226, 0.4);
+  box-shadow: 0 6px 15px rgba(var(--color-accent-primary-rgb, 138, 43, 226), 0.4);
 }
 
 .submit-btn:hover::before {
@@ -476,7 +477,7 @@ input:focus {
   color: var(--color-accent-primary);
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.3s;
+  transition: all var(--auth-transition-medium);
 }
 
 .toggle-auth a:hover {
@@ -527,7 +528,7 @@ input:focus {
   font-size: 0.95rem;
   font-weight: 600; /* Bolder text */
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--auth-transition-medium);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
 }
 

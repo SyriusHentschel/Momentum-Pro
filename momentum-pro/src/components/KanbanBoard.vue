@@ -476,10 +476,12 @@ const preferencesStore = usePreferencesStore();
 const toastStore = useToastStore();
 const { tasks } = storeToRefs(taskStore);
 
-// Task lists for each column
-const todoTasks = ref([]);
-const inProgressTasks = ref([]);
-const doneTasks = ref([]);
+// Computed task lists for each column based on the processed tasks
+// These will automatically update when processedTasks changes
+const processedTasks = ref([]);
+const todoTasks = computed(() => processedTasks.value.filter(task => task.computedStatus === 'todo'));
+const inProgressTasks = computed(() => processedTasks.value.filter(task => task.computedStatus === 'in-progress'));
+const doneTasks = computed(() => processedTasks.value.filter(task => task.computedStatus === 'done'));
 
 // Column collapse state
 const collapsedColumns = ref({
@@ -557,38 +559,12 @@ const sortTasksIntoColumns = () => {
     return taskWithStatus;
   });
   
-  // Log the tasks with their computed status for debugging
-  console.log('Tasks with computed status:', tasksWithStatus.map(t => ({
-    id: t.id,
-    title: t.title,
-    status: t.status,
-    is_complete: t.is_complete,
-    _kanbanColumn: t._kanbanColumn,
-    computedStatus: t.computedStatus
-  })));
-  
-  // Now filter tasks into columns based on computed status
-  todoTasks.value = tasksWithStatus.filter(task => 
-    task.computedStatus === 'todo'
-  );
-  
-  inProgressTasks.value = tasksWithStatus.filter(task => 
-    task.computedStatus === 'in-progress'
-  );
-  
-  doneTasks.value = tasksWithStatus.filter(task => 
-    task.computedStatus === 'done'
-  );
-  
-  // Log the column counts for debugging
-  console.log('Column counts:', {
-    todo: todoTasks.value.length,
-    inProgress: inProgressTasks.value.length,
-    done: doneTasks.value.length
-  });
+  // Update the processed tasks, which will automatically update the computed columns
+  processedTasks.value = tasksWithStatus;
 };
 
 // Watch for changes in tasks and update columns
+// Only trigger when the tasks array changes or its items change
 watch(tasks, () => {
   sortTasksIntoColumns();
 }, { immediate: true, deep: true });
@@ -629,18 +605,18 @@ const onDragChange = async (column, event) => {
     
     await taskStore.updateTask(task.id, updateData);
     
-    console.log(`Task moved to ${column} column:`, task.title);
+    // Task has been moved to a new column
   }
   
   // Handle moved items (reordering within the same column)
   if (event.moved) {
     // We could implement order persistence here if needed
-    console.log('Task reordered within column:', column);
+    // Task has been reordered within the same column
   }
   
   // Handle removed items (they were moved to another column, so we don't need to update them here)
   if (event.removed) {
-    console.log('Task removed from column:', column);
+    // Task has been removed from this column (moved to another column)
   }
 };
 
@@ -718,8 +694,8 @@ const editTask = (task) => {
     
     // Use the _kanbanColumn property and saved column state for task status
   }
+  // Prepare to edit the task with its current status
   
-  console.log('Editing task with status:', currentStatus, 'Task:', task);
   
   // Initialize the edit form with task data
   
@@ -786,7 +762,7 @@ const saveTaskEdit = async () => {
       return;
     }
     
-    console.log('Creating task with user ID:', userId);
+    // Creating a new task with the current user ID
     
     await taskStore.createTask(
       taskData.title,

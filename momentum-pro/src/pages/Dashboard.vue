@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <header class="dashboard-header">
-      <h1>Momentum Pro</h1>
+      <h1 class="gradient-text purple-gold">Momentum Pro</h1>
       <div class="header-actions">
         <router-link to="/profile" class="profile-btn">
           <span class="profile-icon">👤</span>
@@ -126,7 +126,7 @@
         
         <div v-if="taskStore.isLoading && !isAddingTask" class="loading">
           <div class="spinner"></div>
-          <p>Loading tasks...</p>
+          <p class="gradient-text">Loading tasks...</p>
         </div>
         
         <div v-else-if="tasks && tasks.length === 0" class="no-tasks">
@@ -614,17 +614,12 @@ const formatDate = (dateString) => {
     var(--color-purple) 0%, 
     var(--color-gold) 50%, 
     var(--color-red) 100%);
-  box-shadow: 0 0 8px rgba(138, 43, 226, 0.5);
+  box-shadow: var(--shadow-glow-primary);
 }
 
 .dashboard-header h1 {
   margin: 0;
   font-size: 2.5rem;
-  background: linear-gradient(90deg, var(--color-purple), var(--color-gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-fill-color: transparent;
 }
 
 .view-toggle {
@@ -1278,11 +1273,6 @@ h3::before {
   margin-top: 1.2rem;
   font-size: 1.1rem;
   letter-spacing: 0.5px;
-  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-fill-color: transparent;
   font-weight: 500;
 }
 

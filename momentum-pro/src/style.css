@@ -2,23 +2,35 @@
 :root {
   /* Common colors */
   --color-black: #121212;
+  --color-black-rgb: 18, 18, 18;
   --color-white: #ffffff;
+  --color-white-rgb: 255, 255, 255;
   --color-red: #ff3860;
+  --color-red-rgb: 255, 56, 96;
   --color-red-dark: #d32f2f;
+  --color-red-dark-rgb: 211, 47, 47;
   --color-green: #23d160;
+  --color-green-rgb: 35, 209, 96;
   --color-green-dark: #1ca64c;
+  --color-green-dark-rgb: 28, 166, 76;
   
   /* Common gold colors */
   --color-gold: #ffd700;
+  --color-gold-rgb: 255, 215, 0;
   --color-gold-dark: #d4af37;
+  --color-gold-dark-rgb: 212, 175, 55;
   
   /* Common purple colors */
   --color-purple: #8a2be2;
+  --color-purple-rgb: 138, 43, 226;
   --color-purple-dark: #6a1fb2;
+  --color-purple-dark-rgb: 106, 31, 178;
   
   /* Common blue colors */
   --color-blue: #0078d7;
+  --color-blue-rgb: 0, 120, 215;
   --color-blue-dark: #005a9e;
+  --color-blue-dark-rgb: 0, 90, 158;
   
   /* Common gray colors */
   --color-dark-gray: #1e1e1e;
@@ -43,8 +55,11 @@
 [data-theme="dark-default"] {
   /* Accent colors */
   --color-accent-primary: var(--color-purple);
+  --color-accent-primary-rgb: 138, 43, 226; /* RGB values for purple */
   --color-accent-secondary: var(--color-gold);
+  --color-accent-secondary-rgb: 255, 215, 0; /* RGB values for gold */
   --color-accent-danger: var(--color-red);
+  --color-accent-danger-rgb: 255, 56, 96; /* RGB values for red */
   
   /* Text colors */
   --color-text-primary: var(--color-silver-highlight);
@@ -65,8 +80,8 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-  --shadow-glow-primary: 0 0 10px rgba(138, 43, 226, 0.4);
-  --shadow-glow-secondary: 0 0 10px rgba(255, 215, 0, 0.4);
+  --shadow-glow-primary: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.4);
+  --shadow-glow-secondary: 0 0 10px rgba(var(--color-accent-secondary-rgb), 0.4);
   
   /* Base styling */
   color-scheme: dark;
@@ -78,8 +93,11 @@
 [data-theme="light-gold"] {
   /* Accent colors */
   --color-accent-primary: var(--color-gold-dark);
+  --color-accent-primary-rgb: 212, 175, 55; /* RGB values for gold-dark */
   --color-accent-secondary: #b8860b; /* Dark goldenrod */
+  --color-accent-secondary-rgb: 184, 134, 11; /* RGB values for dark goldenrod */
   --color-accent-danger: var(--color-red-dark);
+  --color-accent-danger-rgb: 211, 47, 47; /* RGB values for red-dark */
   
   /* Text colors */
   --color-text-primary: #333333;
@@ -100,8 +118,8 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
-  --shadow-glow-primary: 0 0 10px rgba(212, 175, 55, 0.3);
-  --shadow-glow-secondary: 0 0 10px rgba(184, 134, 11, 0.3);
+  --shadow-glow-primary: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.3);
+  --shadow-glow-secondary: 0 0 10px rgba(var(--color-accent-secondary-rgb), 0.3);
   
   /* Base styling */
   color-scheme: light;
@@ -113,8 +131,11 @@
 [data-theme="professional-blue"] {
   /* Accent colors */
   --color-accent-primary: var(--color-blue);
+  --color-accent-primary-rgb: 0, 120, 215; /* RGB values for blue */
   --color-accent-secondary: #4dabf5; /* Lighter blue */
+  --color-accent-secondary-rgb: 77, 171, 245; /* RGB values for lighter blue */
   --color-accent-danger: var(--color-red);
+  --color-accent-danger-rgb: 255, 56, 96; /* RGB values for red */
   
   /* Text colors */
   --color-text-primary: #f0f0f0;
@@ -135,8 +156,8 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-  --shadow-glow-primary: 0 0 10px rgba(0, 120, 215, 0.4);
-  --shadow-glow-secondary: 0 0 10px rgba(77, 171, 245, 0.4);
+  --shadow-glow-primary: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.4);
+  --shadow-glow-secondary: 0 0 10px rgba(var(--color-accent-secondary-rgb), 0.4);
   
   /* Base styling */
   color-scheme: dark;
@@ -148,8 +169,11 @@
 [data-theme="elegant-purple"] {
   /* Accent colors */
   --color-accent-primary: #9c27b0; /* Purple */
+  --color-accent-primary-rgb: 156, 39, 176; /* RGB values for purple */
   --color-accent-secondary: #e1bee7; /* Light purple */
+  --color-accent-secondary-rgb: 225, 190, 231; /* RGB values for light purple */
   --color-accent-danger: var(--color-red);
+  --color-accent-danger-rgb: 255, 56, 96; /* RGB values for red */
   
   /* Text colors */
   --color-text-primary: #f5f5f5;
@@ -170,13 +194,20 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-  --shadow-glow-primary: 0 0 10px rgba(156, 39, 176, 0.4);
-  --shadow-glow-secondary: 0 0 10px rgba(225, 190, 231, 0.4);
+  --shadow-glow-primary: 0 0 10px rgba(var(--color-accent-primary-rgb), 0.4);
+  --shadow-glow-secondary: 0 0 10px rgba(var(--color-accent-secondary-rgb), 0.4);
   
   /* Base styling */
   color-scheme: dark;
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
+}
+
+/* Transition variables for consistency */
+:root {
+  --transition-fast: 0.2s ease;
+  --transition-medium: 0.3s ease;
+  --transition-slow: 0.5s ease;
 }
 
 /* Form elements */
@@ -186,12 +217,13 @@ input, textarea, select {
   border: 1px solid var(--color-light-gray);
   border-radius: 4px;
   padding: 0.75rem;
-  transition: all 0.3s ease;
+  transition: all var(--transition-medium);
 }
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--color-accent-primary);
-  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+  /* Use a more subtle version of the glow shadow */
+  box-shadow: 0 0 0 2px rgba(var(--color-accent-primary-rgb, 138, 43, 226), 0.2);
   outline: none;
 }
 
@@ -200,7 +232,7 @@ a {
   font-weight: 500;
   color: var(--color-accent-primary);
   text-decoration: none;
-  transition: color 0.3s ease, text-shadow 0.3s ease;
+  transition: color var(--transition-medium), text-shadow var(--transition-medium);
 }
 
 a:hover {
@@ -215,8 +247,8 @@ body {
   min-height: 100vh;
   background-color: var(--color-bg-primary);
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(138, 43, 226, 0.05) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 20%);
+    radial-gradient(circle at 10% 20%, rgba(var(--color-purple-rgb), 0.05) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(var(--color-gold-rgb), 0.05) 0%, transparent 20%);
 }
 
 /* Typography */
@@ -225,11 +257,25 @@ h1 {
   line-height: 1.2;
   font-weight: 600;
   margin-bottom: 1rem;
-  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
+}
+
+/* Gradient text mixin */
+.gradient-text {
+  /* Default gradient uses theme accent colors */
+  --gradient-start: var(--color-accent-primary);
+  --gradient-end: var(--color-accent-secondary);
+  
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Gradient text variations */
+.gradient-text.purple-gold {
+  --gradient-start: var(--color-purple);
+  --gradient-end: var(--color-gold);
 }
 
 h2 {
@@ -257,7 +303,7 @@ button {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-medium);
 }
 
 button:hover {
@@ -277,7 +323,7 @@ button:focus-visible {
   background-color: var(--color-bg-card);
   border-radius: 8px;
   box-shadow: var(--shadow-md);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform var(--transition-medium), box-shadow var(--transition-medium);
 }
 
 .card:hover {
