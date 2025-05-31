@@ -543,11 +543,8 @@ const sortTasksIntoColumns = () => {
     else if (taskWithStatus.is_complete) {
       taskWithStatus.computedStatus = 'done';
     }
-    // Check for the special marker in the description
-    else if (taskWithStatus.description && taskWithStatus.description.includes('[STATUS:in-progress]')) {
-      taskWithStatus.computedStatus = 'in-progress';
-      taskWithStatus._kanbanColumn = 'in-progress';
-    }
+    // We no longer use the special marker in the description
+    // Instead, we rely on the _kanbanColumn property and saved column state
     // If we have a saved column state and it's in-progress, use that
     else if (savedColumn === 'in-progress' || taskWithStatus._kanbanColumn === 'in-progress') {
       taskWithStatus.computedStatus = 'in-progress';
@@ -625,13 +622,8 @@ const onDragChange = async (column, event) => {
       _kanbanColumn: column // Include this so it gets passed to the store
     };
     
-    // Add a special marker in the description for in-progress tasks
-    if (column === 'in-progress' && task.description && !task.description.includes('[STATUS:in-progress]')) {
-      updateData.description = `[STATUS:in-progress] ${task.description || ''}`;
-    } else if (column !== 'in-progress' && task.description && task.description.includes('[STATUS:in-progress]')) {
-      // Remove the marker if the task is no longer in progress
-      updateData.description = task.description.replace('[STATUS:in-progress] ', '');
-    }
+    // We no longer need to modify the description based on status
+    // The _kanbanColumn property is sufficient to track the task's status
     
     // Only include status for dev mode tasks
     if (localStorage.getItem('dev_mode_user')) {
@@ -659,15 +651,11 @@ const onDragChange = async (column, event) => {
 const truncateDescription = (description) => {
   if (!description) return 'No description';
   
-  // Remove the status marker for display
-  let displayDescription = description;
-  if (displayDescription.includes('[STATUS:in-progress]')) {
-    displayDescription = displayDescription.replace('[STATUS:in-progress] ', '');
-  }
+  // We no longer need to remove status markers as we don't add them anymore
   
-  return displayDescription.length > 60 
-    ? displayDescription.substring(0, 60) + '...' 
-    : displayDescription;
+  return description.length > 60 
+    ? description.substring(0, 60) + '...' 
+    : description;
 };
 
 // Update swimlanes
@@ -731,28 +719,20 @@ const editTask = (task) => {
       currentStatus = kanbanStateObj[task.id] || 'todo';
     }
     
-    // Also check for the special marker in the description
-    if (task.description && task.description.includes('[STATUS:in-progress]')) {
-      currentStatus = 'in-progress';
-    }
+    // We no longer use the special marker in the description
+    // Instead, we rely on the _kanbanColumn property and saved column state
   }
   
   console.log('Editing task with status:', currentStatus, 'Task:', task);
   
-  // Clean up the description by removing the status marker for display
-  let cleanDescription = task.description || '';
-  if (cleanDescription.includes('[STATUS:in-progress]')) {
-    cleanDescription = cleanDescription.replace('[STATUS:in-progress] ', '');
-  }
+  // We no longer need to clean up the description as we don't add status markers anymore
   
   editTaskForm.value = {
     id: task.id,
     title: task.title,
-    description: cleanDescription,
+    description: task.description || '',
     importance: task.importance || 'medium',
-    status: currentStatus,
-    // Store the original description with marker for reference
-    originalDescription: task.description
+    status: currentStatus
   };
   showEditModal.value = true;
 };
@@ -769,25 +749,8 @@ const saveTaskEdit = async () => {
     is_complete: editTaskForm.value.status === 'done'
   };
   
-  // Handle the special marker in the description for in-progress tasks
-  // This helps us identify them even without a status field
-  if (editTaskForm.value.status === 'in-progress') {
-    // Add the marker if it's not already there
-    if (!taskData.description.includes('[STATUS:in-progress]')) {
-      taskData.description = `[STATUS:in-progress] ${taskData.description}`;
-    }
-  } else {
-    // Remove the marker if the task is no longer in progress
-    // Check both the current description and the original description
-    if (taskData.description.includes('[STATUS:in-progress]')) {
-      taskData.description = taskData.description.replace('[STATUS:in-progress] ', '');
-    } else if (editTaskForm.value.originalDescription && 
-               editTaskForm.value.originalDescription.includes('[STATUS:in-progress]')) {
-      // If the original had the marker but the current doesn't (because we cleaned it),
-      // make sure we're not adding the marker back
-      taskData.description = taskData.description;
-    }
-  }
+  // We no longer need to add or remove status markers in the description
+  // Instead, we use the _kanbanColumn property and localStorage to track task status
   
   // Only add status for dev mode
   if (localStorage.getItem('dev_mode_user')) {

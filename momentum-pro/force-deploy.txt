@@ -1,3 +1,0 @@
-This file forces Netlify to recognize this as a new deployment.
-Timestamp: 2023-05-30T03:45:00.000Z
-Random: abcdef123456

@@ -423,11 +423,8 @@ const addTask = async () => {
       return;
     }
     
-    // Prepare description with status marker if needed
+    // We no longer need to add status markers to the description
     let description = newTaskDescription.value.trim();
-    if (newTaskStatus.value === 'in-progress' && !description.includes('[STATUS:in-progress]')) {
-      description = `[STATUS:in-progress] ${description}`;
-    }
     
     // Set is_complete based on status
     const isComplete = newTaskStatus.value === 'done';
@@ -462,21 +459,24 @@ const toggleTaskStatus = async (task) => {
 
 // Start editing a task
 const startEditTask = (task) => {
-  // Clean up the description by removing the status marker for display
+  // We no longer need to clean up the description as we don't add status markers anymore
   let cleanDescription = task.description || '';
-  if (cleanDescription.includes('[STATUS:in-progress]')) {
-    cleanDescription = cleanDescription.replace('[STATUS:in-progress] ', '');
-  }
   
   // Determine the correct status
   let status = task.status;
   if (!status) {
     if (task.is_complete) {
       status = 'done';
-    } else if (task.description && task.description.includes('[STATUS:in-progress]')) {
-      status = 'in-progress';
     } else {
-      status = 'todo';
+      // Check if we have a saved column state in localStorage
+      const kanbanState = localStorage.getItem('kanban_column_state');
+      const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+      
+      if (kanbanStateObj[task.id] === 'in-progress') {
+        status = 'in-progress';
+      } else {
+        status = 'todo';
+      }
     }
   }
   
@@ -497,20 +497,8 @@ const saveTaskEdit = async (taskId) => {
   try {
     const status = editTaskForm.value.status || 'todo';
     
-    // Prepare description with status marker if needed
+    // We no longer need to add status markers to the description
     let description = editTaskForm.value.description.trim();
-    
-    if (status === 'in-progress') {
-      // Add the marker if it's not already there
-      if (!description.includes('[STATUS:in-progress]')) {
-        description = `[STATUS:in-progress] ${description}`;
-      }
-    } else {
-      // Remove the marker if the task is no longer in progress
-      if (description.includes('[STATUS:in-progress]')) {
-        description = description.replace('[STATUS:in-progress] ', '');
-      }
-    }
     
     // Create base task data that works for both database and dev mode
     const updateData = {

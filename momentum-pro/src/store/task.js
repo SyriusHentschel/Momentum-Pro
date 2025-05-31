@@ -162,16 +162,24 @@ export const useTaskStore = defineStore("tasks", {
         // Check if we're in development mode
         if (localStorage.getItem('dev_mode_user')) {
           console.log('Creating task in development mode');
+          const taskId = Date.now(); // Use timestamp as ID
           const newTask = {
-            id: Date.now(), // Use timestamp as ID
+            id: taskId,
             title,
             description,
             user_id,
             is_complete: status === 'done',
             importance,
             status,
+            _kanbanColumn: status, // Add the _kanbanColumn property
             created_at: new Date().toISOString()
           };
+          
+          // Save the kanban column state to localStorage
+          const kanbanState = localStorage.getItem('kanban_column_state');
+          const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+          kanbanStateObj[taskId] = status;
+          localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
           
           devModeTasks.unshift(newTask);
           // Save to localStorage
@@ -211,9 +219,21 @@ export const useTaskStore = defineStore("tasks", {
         
         const { data, error } = await supabase
           .from("tasks")
-          .insert([taskData]);
+          .insert([taskData])
+          .select();
         
         if (error) throw error;
+        
+        // If we have a task ID, save the kanban column state to localStorage
+        if (data && data.length > 0) {
+          const taskId = data[0].id;
+          // Save the kanban column state to localStorage
+          const kanbanState = localStorage.getItem('kanban_column_state');
+          const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+          kanbanStateObj[taskId] = status;
+          localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+        }
+        
         await this.fetchTasks();
         this.setSuccess('Task created successfully!');
         return data;

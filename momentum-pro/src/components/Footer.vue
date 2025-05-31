@@ -7,7 +7,7 @@
       <div class="contact-info">
         <span>Contact: <a href="mailto:support@momentumpro.com">support@momentumpro.com</a></span>
         <span>Phone: (555) 123-4567</span>
-        <span><a href="https://www.momentumpro.com" target="_blank">www.momentumpro.com</a></span>
+        <span><a href="https://momentum-pro.netlify.app" target="_blank">momentum-pro.netlify.app</a></span>
       </div>
     </div>
   </footer>

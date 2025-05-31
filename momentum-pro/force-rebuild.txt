@@ -1,3 +1,0 @@
-This file forces Netlify to rebuild the site.
-Timestamp: 2025-05-30T03:45:00Z
-Build ID: FORCE-REBUILD-001
