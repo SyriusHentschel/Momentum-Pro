@@ -109,39 +109,39 @@ const toastStore = useToastStore();
 
 /* Toast types with futuristic styling */
 .toast-success {
-  border-left: 3px solid #4caf50;
-  box-shadow: var(--shadow-md), 0 0 15px rgba(76, 175, 80, 0.3);
+  border-left: 3px solid var(--color-green);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(var(--color-green-rgb), 0.3);
 }
 
 .toast-success:hover {
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(76, 175, 80, 0.4);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-green-rgb), 0.4);
 }
 
 .toast-error {
   border-left: 3px solid var(--color-red);
-  box-shadow: var(--shadow-md), 0 0 15px rgba(255, 56, 96, 0.3);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(var(--color-red-rgb), 0.3);
 }
 
 .toast-error:hover {
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(255, 56, 96, 0.4);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-red-rgb), 0.4);
 }
 
 .toast-warning {
   border-left: 3px solid var(--color-gold);
-  box-shadow: var(--shadow-md), 0 0 15px rgba(255, 215, 0, 0.3);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(var(--color-gold-rgb), 0.3);
 }
 
 .toast-warning:hover {
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(255, 215, 0, 0.4);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-gold-rgb), 0.4);
 }
 
 .toast-info {
   border-left: 3px solid var(--color-purple);
-  box-shadow: var(--shadow-md), 0 0 15px rgba(138, 43, 226, 0.3);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(var(--color-purple-rgb), 0.3);
 }
 
 .toast-info:hover {
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(138, 43, 226, 0.4);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-purple-rgb), 0.4);
 }
 
 /* Futuristic animations */

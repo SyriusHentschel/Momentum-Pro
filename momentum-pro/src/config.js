@@ -19,7 +19,4 @@ export const APP_CONFIG = {
   mode: import.meta.env.MODE
 };
 
-// Log configuration on load (will appear in console)
-console.log('App config loaded:', APP_CONFIG);
-console.log('Supabase URL:', SUPABASE_CONFIG.url);
-console.log('Auth Redirect URL:', SUPABASE_CONFIG.redirectUrl);
+// Logging is handled in supabase.js to avoid duplication

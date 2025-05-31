@@ -190,12 +190,12 @@ const formatDate = (dateString) => {
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-medium);
 }
 
 .task-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
@@ -238,7 +238,7 @@ const formatDate = (dateString) => {
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast);
 }
 
 .task-actions button:hover {
@@ -262,7 +262,7 @@ const formatDate = (dateString) => {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  transition: all 0.3s ease;
+  transition: all var(--transition-medium);
 }
 
 .task-description.expanded {
@@ -306,7 +306,7 @@ const formatDate = (dateString) => {
   font-size: 1rem;
   background-color: var(--input-bg);
   color: var(--text-primary);
-  transition: border-color 0.3s;
+  transition: border-color var(--transition-medium);
 }
 
 .edit-textarea {
@@ -345,7 +345,7 @@ const formatDate = (dateString) => {
   border: none;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.3s;
+  transition: background-color var(--transition-medium);
 }
 
 .save-btn {
@@ -408,6 +408,6 @@ const formatDate = (dateString) => {
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 </style>
