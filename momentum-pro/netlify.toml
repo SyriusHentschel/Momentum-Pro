@@ -1,8 +1,8 @@
 # Netlify configuration file
 
 [build]
-  publish = "."
-  command = "echo 'EMERGENCY TEST MODE - NO BUILD COMMAND'"
+  publish = "dist"
+  command = "npm run build"
   ignore_warnings = true
   
 [build.environment]
@@ -23,15 +23,30 @@
   status = 200
   force = true
 
+# Special handling for JavaScript files
+[[headers]]
+  for = "**/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/assets/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    Cache-Control = "public, max-age=31536000, immutable"
+    X-Content-Type-Options = "nosniff"
+
+# Special handling for CSS files
+[[headers]]
+  for = "**/*.css"
+  [headers.values]
+    Content-Type = "text/css"
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # Disable cache for HTML and root files
 [[headers]]
   for = "/*"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
-    Pragma = "no-cache"
-
-# Add cache control for assets
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    X-Content-Type-Options = "nosniff"

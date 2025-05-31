@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript Module Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    .box {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>JavaScript Module Test</h1>
+  <p>This page tests if JavaScript modules are loading correctly with the proper MIME type.</p>
+  
+  <div class="box">
+    <h2>Module Loading Test</h2>
+    <div id="module-result">Testing module loading...</div>
+    <p>If modules are working correctly, you should see a success message above.</p>
+  </div>
+  
+  <div class="box">
+    <h2>MIME Type Information</h2>
+    <p>JavaScript modules require the correct MIME type: <code>application/javascript</code></p>
+    <p>If you see errors in the console about MIME types, it means the server is not correctly configured.</p>
+  </div>
+  
+  <div class="box">
+    <h2>Headers Test</h2>
+    <p>The following headers should be set for JavaScript files:</p>
+    <pre>Content-Type: application/javascript
+Cache-Control: public, max-age=31536000, immutable</pre>
+  </div>
+  
+  <p><a href="/">Return to Home Page</a></p>
+  
+  <script type="module">
+    // Simple module test
+    try {
+      // Import the test module
+      import('./test-module.js')
+        .then(module => {
+          const { testModule, testFunction } = module;
+          
+          // Display success message
+          document.getElementById('module-result').innerHTML = `
+            <span class="success">✓ Module imported successfully!</span><br>
+            Module name: ${testModule.name}<br>
+            Version: ${testModule.version}<br>
+            Timestamp: ${testModule.timestamp}<br>
+            Function result: ${testFunction()}<br>
+            Method result: ${testModule.sayHello()}
+          `;
+          
+          console.log('Module import successful:', testModule);
+        })
+        .catch(error => {
+          // Display error message
+          document.getElementById('module-result').innerHTML = 
+            `<span class="error">✗ Module import failed: ${error.message}</span>`;
+          console.error('Module import failed:', error);
+        });
+    } catch (error) {
+      // Display error message for syntax errors
+      document.getElementById('module-result').innerHTML = 
+        `<span class="error">✗ Module import syntax error: ${error.message}</span>`;
+      console.error('Module import syntax error:', error);
+    }
+  </script>
+</body>
+</html>
