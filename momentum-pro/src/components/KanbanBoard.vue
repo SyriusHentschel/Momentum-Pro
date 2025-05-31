@@ -543,8 +543,6 @@ const sortTasksIntoColumns = () => {
     else if (taskWithStatus.is_complete) {
       taskWithStatus.computedStatus = 'done';
     }
-    // We no longer use the special marker in the description
-    // Instead, we rely on the _kanbanColumn property and saved column state
     // If we have a saved column state and it's in-progress, use that
     else if (savedColumn === 'in-progress' || taskWithStatus._kanbanColumn === 'in-progress') {
       taskWithStatus.computedStatus = 'in-progress';
@@ -622,8 +620,7 @@ const onDragChange = async (column, event) => {
       _kanbanColumn: column // Include this so it gets passed to the store
     };
     
-    // We no longer need to modify the description based on status
-    // The _kanbanColumn property is sufficient to track the task's status
+    // The _kanbanColumn property tracks the task's status
     
     // Only include status for dev mode tasks
     if (localStorage.getItem('dev_mode_user')) {
@@ -651,7 +648,7 @@ const onDragChange = async (column, event) => {
 const truncateDescription = (description) => {
   if (!description) return 'No description';
   
-  // We no longer need to remove status markers as we don't add them anymore
+  // Truncate long descriptions for display
   
   return description.length > 60 
     ? description.substring(0, 60) + '...' 
@@ -719,13 +716,12 @@ const editTask = (task) => {
       currentStatus = kanbanStateObj[task.id] || 'todo';
     }
     
-    // We no longer use the special marker in the description
-    // Instead, we rely on the _kanbanColumn property and saved column state
+    // Use the _kanbanColumn property and saved column state for task status
   }
   
   console.log('Editing task with status:', currentStatus, 'Task:', task);
   
-  // We no longer need to clean up the description as we don't add status markers anymore
+  // Initialize the edit form with task data
   
   editTaskForm.value = {
     id: task.id,
@@ -749,8 +745,7 @@ const saveTaskEdit = async () => {
     is_complete: editTaskForm.value.status === 'done'
   };
   
-  // We no longer need to add or remove status markers in the description
-  // Instead, we use the _kanbanColumn property and localStorage to track task status
+  // Use the _kanbanColumn property and localStorage to track task status
   
   // Only add status for dev mode
   if (localStorage.getItem('dev_mode_user')) {
@@ -1051,17 +1046,7 @@ onMounted(async () => {
   font-weight: bold;
 }
 
-.todo-column .column-header {
-  border-top: 4px solid #3498db;
-}
-
-.in-progress-column .column-header {
-  border-top: 4px solid #f39c12;
-}
-
-.done-column .column-header {
-  border-top: 4px solid #2ecc71;
-}
+/* Column header styling moved to consolidated section below */
 
 .task-list {
   padding: 1rem;
@@ -1196,7 +1181,7 @@ onMounted(async () => {
   border-top: 3px solid var(--color-accent-primary);
 }
 
-.progress-column .column-header {
+.in-progress-column .column-header {
   border-top: 3px solid var(--color-gold);
 }
 
@@ -1393,12 +1378,14 @@ onMounted(async () => {
 }
 
 .modal-content {
-  background-color: var(--color-bg-primary);
+  background-color: var(--color-bg-secondary);
   border-radius: 8px;
   padding: 1.5rem;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-content h3 {
@@ -1466,16 +1453,6 @@ onMounted(async () => {
 
 .label-icon {
   font-size: 1.2rem;
-}
-
-.modal-content {
-  background-color: var(--color-bg-secondary);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
