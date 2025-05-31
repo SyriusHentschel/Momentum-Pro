@@ -3,6 +3,20 @@ import { defineStore } from "pinia";
 import { supabase } from "../supabase";
 import { useToastStore } from "./toast";
 
+/**
+ * Utility function for handling task operation errors
+ * @param {Error} error - The error object
+ * @param {Object} toastStore - The toast store instance
+ * @param {string} operation - The name of the operation that failed
+ * @returns {null} - Returns null to indicate failure
+ */
+const handleTaskError = (error, toastStore, operation) => {
+  const errorMessage = `${operation} failed: ${error.message || 'Unknown error'}`;
+  console.error(`${operation} error:`, error);
+  toastStore.error(errorMessage);
+  return null;
+};
+
 // Default tasks for development mode
 const defaultDevTasks = [
   {
@@ -37,7 +51,10 @@ const defaultDevTasks = [
   }
 ];
 
-// Load tasks from localStorage or use defaults
+/**
+ * Load tasks from localStorage or use defaults for development mode
+ * @returns {Array} Array of tasks for development mode
+ */
 const loadDevModeTasks = () => {
   try {
     const savedTasks = localStorage.getItem('dev_mode_tasks');
@@ -59,12 +76,18 @@ export const useTaskStore = defineStore("tasks", {
     successMessage: null,
   }),
   actions: {
-    // Set loading state
+    /**
+     * Sets the loading state
+     * @param {boolean} status - The loading status
+     */
     setLoading(status) {
       this.isLoading = status;
     },
     
-    // Set error message with toast
+    /**
+     * Sets an error message and shows a toast notification
+     * @param {string} message - The error message
+     */
     setError(message) {
       this.error = message;
       // Show toast notification
@@ -77,7 +100,10 @@ export const useTaskStore = defineStore("tasks", {
       }, 5000);
     },
     
-    // Set success message with toast
+    /**
+     * Sets a success message and shows a toast notification
+     * @param {string} message - The success message
+     */
     setSuccess(message) {
       this.successMessage = message;
       // Show toast notification
@@ -90,7 +116,9 @@ export const useTaskStore = defineStore("tasks", {
       }, 5000);
     },
     
-    // Save dev mode tasks to localStorage
+    /**
+     * Saves development mode tasks to localStorage
+     */
     saveDevModeTasks() {
       if (localStorage.getItem('dev_mode_user')) {
         localStorage.setItem('dev_mode_tasks', JSON.stringify(devModeTasks));
@@ -98,6 +126,10 @@ export const useTaskStore = defineStore("tasks", {
       }
     },
     
+    /**
+     * Fetches all tasks for the current user
+     * @returns {Promise<Array|null>} - Array of tasks or null on error
+     */
     async fetchTasks() {
       this.setLoading(true);
       this.error = null;
@@ -146,14 +178,22 @@ export const useTaskStore = defineStore("tasks", {
           return task;
         });
       } catch (error) {
-        console.error('Error fetching tasks:', error);
-        this.setError('Failed to load tasks. Please try again.');
         this.tasks = [];
+        return handleTaskError(error, useToastStore(), 'Fetch tasks');
       } finally {
         this.setLoading(false);
       }
     },
     
+    /**
+     * Creates a new task
+     * @param {string} title - The task title
+     * @param {string} description - The task description
+     * @param {string} user_id - The user ID
+     * @param {string} importance - The task importance (low, medium, high)
+     * @param {string} status - The task status (todo, in-progress, done)
+     * @returns {Promise<Array|null>} - The created task or null on error
+     */
     async createTask(title, description, user_id, importance = 'medium', status = 'todo') {
       this.setLoading(true);
       this.error = null;
@@ -238,14 +278,18 @@ export const useTaskStore = defineStore("tasks", {
         this.setSuccess('Task created successfully!');
         return data;
       } catch (error) {
-        console.error('Error creating task:', error);
-        this.setError('Failed to create task. Please try again.');
-        return null;
+        return handleTaskError(error, useToastStore(), 'Create task');
       } finally {
         this.setLoading(false);
       }
     },
     
+    /**
+     * Updates an existing task
+     * @param {number|string} id - The task ID
+     * @param {Object} updates - The fields to update
+     * @returns {Promise<Array|null>} - The updated task or null on error
+     */
     async updateTask(id, updates) {
       this.setLoading(true);
       this.error = null;
@@ -316,24 +360,39 @@ export const useTaskStore = defineStore("tasks", {
         this.setSuccess('Task updated successfully!');
         return data;
       } catch (error) {
-        console.error('Error updating task:', error);
-        this.setError('Failed to update task. Please try again.');
-        return null;
+        return handleTaskError(error, useToastStore(), 'Update task');
       } finally {
         this.setLoading(false);
       }
     },
     
+    /**
+     * Toggles the completion status of a task
+     * @param {number|string} id - The task ID
+     * @param {boolean} currentStatus - The current completion status
+     * @returns {Promise<Array|null>} - The updated task or null on error
+     */
     async toggleTaskCompletion(id, currentStatus) {
       return this.updateTask(id, { 
         is_complete: !currentStatus
       });
     },
     
+    /**
+     * Updates the importance of a task
+     * @param {number|string} id - The task ID
+     * @param {string} importance - The new importance level (low, medium, high)
+     * @returns {Promise<Array|null>} - The updated task or null on error
+     */
     async updateTaskImportance(id, importance) {
       return this.updateTask(id, { importance });
     },
     
+    /**
+     * Deletes a task
+     * @param {number|string} id - The task ID
+     * @returns {Promise<void>}
+     */
     async deleteTask(id) {
       this.setLoading(true);
       this.error = null;
@@ -379,8 +438,7 @@ export const useTaskStore = defineStore("tasks", {
         await this.fetchTasks();
         this.setSuccess('Task deleted successfully!');
       } catch (error) {
-        console.error('Error deleting task:', error);
-        this.setError('Failed to delete task. Please try again.');
+        return handleTaskError(error, useToastStore(), 'Delete task');
       } finally {
         this.setLoading(false);
       }
