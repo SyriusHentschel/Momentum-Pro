@@ -470,6 +470,7 @@ import { useToastStore } from '../store/toast';
 import { usePreferencesStore } from '../store/preferences';
 import { supabase } from '../supabase';
 import draggable from 'vuedraggable';
+import { debounce } from '../utils/debounce';
 
 const taskStore = useTaskStore();
 const preferencesStore = usePreferencesStore();
@@ -569,8 +570,35 @@ watch(tasks, () => {
   sortTasksIntoColumns();
 }, { immediate: true, deep: true });
 
+// Pending updates queue
+const pendingUpdates = ref([]);
+
+// Debounced function to process pending updates
+const processPendingUpdates = debounce(async () => {
+  if (pendingUpdates.value.length === 0) return;
+  
+  // Clone the current pending updates
+  const updates = [...pendingUpdates.value];
+  
+  console.log(`Processing ${updates.length} updates in batch`);
+  
+  // Clear the pending updates queue
+  pendingUpdates.value = [];
+  
+  // Process updates in batch if there are multiple updates
+  if (updates.length > 1) {
+    console.log('Using batch update for multiple tasks');
+    await taskStore.batchUpdateTasks(updates);
+  } else if (updates.length === 1) {
+    // Process single update
+    console.log('Processing single task update');
+    const update = updates[0];
+    await taskStore.updateTask(update.id, update.changes);
+  }
+}, 1000); // 1 second debounce
+
 // Handle drag and drop changes
-const onDragChange = async (column, event) => {
+const onDragChange = (column, event) => {
   // If there's no change event, return
   if (!event) return;
   
@@ -584,26 +612,31 @@ const onDragChange = async (column, event) => {
     // This won't be sent to the database because we'll filter it out
     task._kanbanColumn = column;
     
-    // Save the kanban column state to localStorage
+    // Save the kanban column state to localStorage (for immediate UI feedback)
     const kanbanState = localStorage.getItem('kanban_column_state');
     const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
     kanbanStateObj[task.id] = column;
     localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
     
-    // Update the task with appropriate fields
+    // Prepare update data
     const updateData = { 
       is_complete: isComplete,
       _kanbanColumn: column // Include this so it gets passed to the store
     };
-    
-    // The _kanbanColumn property tracks the task's status
     
     // Only include status for dev mode tasks
     if (localStorage.getItem('dev_mode_user')) {
       updateData.status = newStatus;
     }
     
-    await taskStore.updateTask(task.id, updateData);
+    // Add to pending updates queue
+    pendingUpdates.value.push({
+      id: task.id,
+      changes: updateData
+    });
+    
+    // Trigger debounced update
+    processPendingUpdates();
     
     // Task has been moved to a new column
   }
@@ -732,29 +765,41 @@ const saveTaskEdit = async () => {
   // This won't be sent to the database because we'll filter it out
   taskData._kanbanColumn = editTaskForm.value.status;
   
-  // Save the kanban column state to localStorage
+  // Save the kanban column state to localStorage for immediate UI feedback
   const kanbanState = localStorage.getItem('kanban_column_state');
   const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
   
   if (editTaskForm.value.id) {
     // For existing tasks, save the column state
     kanbanStateObj[editTaskForm.value.id] = editTaskForm.value.status;
-  }
-  
-  localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
-  
-  if (editTaskForm.value.id) {
-    // Update existing task
-    await taskStore.updateTask(editTaskForm.value.id, taskData);
+    localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+    
+    // Update existing task - add to pending updates queue for batch processing
+    pendingUpdates.value.push({
+      id: editTaskForm.value.id,
+      changes: taskData
+    });
+    
+    // Trigger debounced update
+    processPendingUpdates();
+    
+    // Apply optimistic update to local state
+    const taskIndex = processedTasks.value.findIndex(t => t.id === editTaskForm.value.id);
+    if (taskIndex !== -1) {
+      processedTasks.value[taskIndex] = {
+        ...processedTasks.value[taskIndex],
+        ...taskData,
+        computedStatus: editTaskForm.value.status
+      };
+    }
   } else {
     // Create new task
     // Get the current user ID from the user store
     const userStore = useUserStore();
-    await userStore.fetchUser(); // Make sure we have the latest user data
     
     // Get the current user from Supabase directly
     const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
+    const userId = user?.id || localStorage.getItem('dev_mode_user');
     
     if (!userId) {
       console.error('No authenticated user found');
@@ -762,8 +807,8 @@ const saveTaskEdit = async () => {
       return;
     }
     
-    // Creating a new task with the current user ID
-    
+    // Creating a new task with the current user ID - this can't be batched
+    // since we need the new task ID
     await taskStore.createTask(
       taskData.title,
       taskData.description,
@@ -802,7 +847,12 @@ const deleteTask = (id) => {
 // Confirm delete
 const confirmDelete = async () => {
   if (taskToDeleteId.value) {
+    // Apply optimistic update to local state
+    processedTasks.value = processedTasks.value.filter(task => task.id !== taskToDeleteId.value);
+    
+    // Perform the actual delete operation
     await taskStore.deleteTask(taskToDeleteId.value);
+    
     showDeleteConfirm.value = false;
     taskToDeleteId.value = null;
   }
@@ -924,7 +974,7 @@ onMounted(async () => {
   border: 1px solid #ddd;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .dev-mode-toggle button.active {
@@ -1174,7 +1224,7 @@ onMounted(async () => {
   box-shadow: var(--shadow-sm);
   cursor: grab;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
 }
 
 .kanban-task:hover {
@@ -1250,7 +1300,7 @@ onMounted(async () => {
   cursor: pointer;
   padding: 0.2rem;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast);
 }
 
 .task-actions button:hover {

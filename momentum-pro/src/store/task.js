@@ -389,6 +389,101 @@ export const useTaskStore = defineStore("tasks", {
     },
     
     /**
+     * Batch updates multiple tasks at once to reduce API calls
+     * @param {Array} updates - Array of objects with id and changes properties
+     * @returns {Promise<void>}
+     */
+    async batchUpdateTasks(updates) {
+      this.setLoading(true);
+      this.error = null;
+      
+      console.log(`🔄 BATCH UPDATE: Processing ${updates.length} tasks in a single API call`);
+      
+      try {
+        // For development mode
+        if (localStorage.getItem('dev_mode_user')) {
+          console.log('Batch updating tasks in development mode', updates);
+          
+          // Process each update locally
+          updates.forEach(update => {
+            const index = devModeTasks.findIndex(task => task.id === update.id);
+            if (index !== -1) {
+              devModeTasks[index] = { ...devModeTasks[index], ...update.changes };
+              
+              // Save kanban column state if needed
+              if (update.changes._kanbanColumn) {
+                const kanbanState = localStorage.getItem('kanban_column_state');
+                const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+                kanbanStateObj[update.id] = update.changes._kanbanColumn;
+                localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+              }
+            }
+          });
+          
+          this.saveDevModeTasks();
+          await this.fetchTasks();
+          this.setSuccess('Tasks updated successfully!');
+          return;
+        }
+        
+        // For production with Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          throw new Error('No authenticated user found');
+        }
+        
+        // Process each update with Supabase
+        const updatePromises = updates.map(update => {
+          const dbUpdates = { ...update.changes };
+          
+          // Save kanban column state if needed
+          if (update.changes._kanbanColumn) {
+            const kanbanState = localStorage.getItem('kanban_column_state');
+            const kanbanStateObj = kanbanState ? JSON.parse(kanbanState) : {};
+            kanbanStateObj[update.id] = update.changes._kanbanColumn;
+            localStorage.setItem('kanban_column_state', JSON.stringify(kanbanStateObj));
+          }
+          
+          // Remove fields that don't exist in the database schema
+          const fieldsToRemove = ['status', '_inProgress', '_kanbanColumn', 'computedStatus'];
+          for (const field of fieldsToRemove) {
+            if (field in dbUpdates) {
+              delete dbUpdates[field];
+            }
+          }
+          
+          // Map status to is_complete if needed
+          if (update.changes.status === 'done') {
+            dbUpdates.is_complete = true;
+          } else if (update.changes.status === 'todo' || update.changes.status === 'in-progress') {
+            dbUpdates.is_complete = false;
+          }
+          
+          return supabase
+            .from("tasks")
+            .update(dbUpdates)
+            .match({ id: update.id, user_id: user.id });
+        });
+        
+        const results = await Promise.all(updatePromises);
+        
+        // Check for errors
+        const errors = results.filter(result => result.error);
+        if (errors.length > 0) {
+          throw new Error(`${errors.length} updates failed: ${errors[0].error.message}`);
+        }
+        
+        await this.fetchTasks();
+        this.setSuccess('Tasks updated successfully!');
+      } catch (error) {
+        return handleTaskError(error, useToastStore(), 'Batch update tasks');
+      } finally {
+        this.setLoading(false);
+      }
+    },
+    
+    /**
      * Deletes a task
      * @param {number|string} id - The task ID
      * @returns {Promise<void>}
